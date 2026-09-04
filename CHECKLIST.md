@@ -47,11 +47,16 @@ blocked in the dashboard — not just in a test log.
 - [ ] **Foundry is not in CI.** `.github/workflows/ci.yml` runs `yarn`, `yarn build`,
       `yarn coverage` only. `forge test` never runs — so the fail-closed assertion,
       your single most important safety claim, is not gated on any push. Add the step.
-- [x] ~~Legacy model pinned~~ — `DEFAULT_MODEL` is now `claude-haiku-4-5`. **Unverified
-      against the live API** (no credentials on the machine it was changed from); a bad
-      model ID degrades to the rule-engine verdict rather than failing loudly, so
-      confirm one real call succeeds before relying on LLM explanations in the demo.
-      `ANTHROPIC_MODEL` overrides it without a code change.
+- [x] ~~Legacy model pinned~~ — `DEFAULT_MODEL` is now `claude-haiku-4-5-20251001`,
+      the pinned snapshot per the model docs (`claude-haiku-4-5` is an alias that
+      resolves to it). String confirmed against the docs; **the live call has not been
+      made** — there were no Anthropic credentials on the machine it was changed from.
+- [ ] **Confirm the LLM pass actually works before the demo.** `reasonAboutTx` never
+      throws: a rejected model ID, a bad key, or a timeout all resolve to `undefined`
+      and fall back to the rule-engine verdict, so a broken LLM step looks identical to
+      a working one from the outside. Run it once with a real key:
+      `cd backend && ANTHROPIC_API_KEY=sk-... npm run check:llm` — it prints the model
+      sent, the HTTP status, and PASS only on a structured verdict.
 
 Already fixed, listed so nobody re-does them:
 
