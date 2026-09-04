@@ -4,13 +4,11 @@ import { useEffect, useState } from "react"
  * Issue #19: the demo-stage "simulate attack" button. One click fires the
  * backend drainer script against the demo Safe - no terminal on stage.
  *
- * Trigger contract: POST to the trigger endpoint
- * (`VITE_ATTACK_TRIGGER_URL`, or `<VITE_BACKEND_URL>/simulate/attack` as
- * the default). The backend drainer-script issue owns what happens next;
- * this card only needs the endpoint to accept the POST and start the
- * script, returning 2xx. Once the drainer lands, the attack transactions
- * flow through the watcher -> verdict pipeline and appear in the live
- * risk feed (issue #17, 4s poll) within seconds - that is the visible
+ * Trigger contract: POST a proposed transaction to the trigger endpoint
+ * (`VITE_ATTACK_TRIGGER_URL`, or `<VITE_BACKEND_URL>/tx/propose` as the
+ * default) in the `{ to, value, data }` shape the orchestrator's intake
+ * requires. The tx flows through the scoring pipeline and surfaces in the
+ * live risk feed (issue #17, 4s poll) within seconds - that is the visible
  * reaction this button is for.
  *
  * Guarded with a cooldown so an excited stage demo cannot double-fire.
@@ -25,6 +23,37 @@ const backendUrl = import.meta.env.VITE_BACKEND_URL as string | undefined
 const triggerUrl: string | undefined = configuredTrigger ?? (backendUrl ? `${backendUrl}/tx/propose` : undefined)
 
 const COOLDOWN_MS = 5000
+
+/**
+ * The drainer payload the orchestrator scores: `setApprovalForAll(operator, true)`,
+ * which grants blanket control of an entire NFT collection. Selector 0xa22cb465 is
+ * exactly what `ruleEngine.ts` weights hardest, so this round-trips into a high-risk
+ * verdict rather than a shrug.
+ *
+ * Sent as the real `{ to, value, data }` the intake endpoint requires. A fresh
+ * operator address per click keeps the derived txHash unique, so repeat demo runs
+ * produce new feed rows instead of deduping into the first one.
+ */
+const SET_APPROVAL_FOR_ALL = "0xa22cb465"
+
+function randomAddress(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(20))
+  return `0x${Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("")}`
+}
+
+function encodeAddress(address: string): string {
+  return address.replace(/^0x/, "").toLowerCase().padStart(64, "0")
+}
+
+/** A malicious NFT collection is the target; the attacker is the operator being approved. */
+function buildDrainerTx(): { to: string; value: string; data: string } {
+  const approvedTrue = "1".padStart(64, "0")
+  return {
+    to: randomAddress(),
+    value: "0",
+    data: `${SET_APPROVAL_FOR_ALL}${encodeAddress(randomAddress())}${approvedTrue}`,
+  }
+}
 
 export function SimulateAttackCard() {
   const [state, setState] = useState<FireState>("idle")
@@ -49,7 +78,7 @@ export function SimulateAttackCard() {
       const res = await fetch(triggerUrl!, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ target: "demo-safe" }),
+        body: JSON.stringify(buildDrainerTx()),
       })
       if (!res.ok) throw new Error(`trigger returned ${res.status}`)
       setState("fired")
