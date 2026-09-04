@@ -4,8 +4,13 @@
  * resolves to `undefined` - which is right for production and useless for
  * telling "the model answered" apart from "the model ID is wrong".
  *
- *   cd backend && ANTHROPIC_API_KEY=sk-... npm run check:llm
+ *   cd backend && npm run check:llm          # key from backend/.env
+ *   ANTHROPIC_API_KEY=sk-... npm run check:llm   # or from the environment
  */
+// Load backend/.env so the key can live in a gitignored file rather than being
+// pasted into a shell (and into shell history).
+import "dotenv/config"
+
 import { DEFAULT_MODEL, reasonAboutTx } from "../src/llmReasoning.js"
 import { scoreTransaction } from "../src/ruleEngine.js"
 
@@ -14,6 +19,7 @@ console.log(`model: ${model}`)
 
 if (!process.env.ANTHROPIC_API_KEY) {
   console.error("FAIL  ANTHROPIC_API_KEY is not set - cannot make a real call.")
+  console.error("      Put it in backend/.env (gitignored) or pass it inline.")
   process.exit(1)
 }
 
