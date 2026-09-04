@@ -1,7 +1,14 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http"
+import { pathToFileURL } from "node:url"
 import { keccak256, toHex } from "viem"
 
-import type { ProcessingStatus, ProposedTx, RiskOrchestrator } from "./riskOrchestrator.js"
+import {
+  createMemoryStateStore,
+  RiskOrchestrator,
+  type ProcessingStatus,
+  type ProposedTx,
+  type RelayerSlot,
+} from "./riskOrchestrator.js"
 
 /**
  * Intake + status API for the risk orchestrator (issue #45: "expose
@@ -18,8 +25,19 @@ import type { ProcessingStatus, ProposedTx, RiskOrchestrator } from "./riskOrche
  * derived so replays of the identical proposal dedupe naturally.
  */
 
+/**
+ * The dashboard is served from a different origin in dev (Vite on :5173,
+ * this API on :3001), so without these the browser blocks every call from
+ * the risk feed and the attack button.
+ */
+const CORS_HEADERS = {
+  "access-control-allow-origin": "*",
+  "access-control-allow-methods": "GET, POST, OPTIONS",
+  "access-control-allow-headers": "content-type",
+} as const
+
 function sendJson(res: ServerResponse, status: number, body: unknown): void {
-  res.writeHead(status, { "content-type": "application/json" })
+  res.writeHead(status, { "content-type": "application/json", ...CORS_HEADERS })
   res.end(JSON.stringify(body, (_key, v: unknown) => (typeof v === "bigint" ? v.toString() : v)))
 }
 
@@ -31,6 +49,12 @@ export function createOrchestratorHttpServer(orchestrator: RiskOrchestrator): Se
   return createServer((req, res) => {
     void (async () => {
       const url = new URL(req.url ?? "/", "http://localhost")
+
+      if (req.method === "OPTIONS") {
+        res.writeHead(204, CORS_HEADERS)
+        res.end()
+        return
+      }
 
       if (req.method === "GET" && url.pathname === "/health") {
         sendJson(res, 200, { ok: true, pending: orchestrator.pendingCount })
@@ -103,4 +127,71 @@ function readBody(req: IncomingMessage): Promise<string> {
     req.on("end", () => resolve(data))
     req.on("error", reject)
   })
+}
+
+// ---------------------------------------------------------------------------
+// Entrypoint - `npm run orchestrator`
+// ---------------------------------------------------------------------------
+
+/**
+ * Scoring runs and verdicts are served over HTTP, but nothing is written
+ * on-chain: no RiskRegistry is deployed yet, and the relayer is the one
+ * component holding a real key. Swap this for a `VerdictRelayer` backed by
+ * `createRiskRegistryClient` once deployment lands (see CHECKLIST Phase 1).
+ */
+function createLoggingRelayer(): RelayerSlot {
+  return {
+    async submit(txHash, verdict) {
+      console.log(`[relayer:dry-run] ${txHash} score=${verdict.score} label=${verdict.label}`)
+    },
+  }
+}
+
+function startFromEnv(): void {
+  const port = Number(process.env.ORCHESTRATOR_PORT ?? 3001)
+  if (!Number.isInteger(port) || port <= 0 || port > 65535) {
+    console.error(`ORCHESTRATOR_PORT must be a valid port number, got: ${process.env.ORCHESTRATOR_PORT}`)
+    process.exit(1)
+  }
+
+  const orchestrator = RiskOrchestrator.create({
+    relayer: createLoggingRelayer(),
+    store: createMemoryStateStore(),
+    onError: (err) => {
+      console.error("[orchestrator]", err)
+    },
+  })
+
+  const server = createOrchestratorHttpServer(orchestrator)
+
+  server.on("error", (err: NodeJS.ErrnoException) => {
+    if (err.code === "EADDRINUSE") {
+      console.error(`Port ${port} is already in use. Set ORCHESTRATOR_PORT to a free port.`)
+      process.exit(1)
+    }
+    throw err
+  })
+
+  server.listen(port, () => {
+    console.log(`Tripwire orchestrator listening on http://localhost:${port}`)
+    console.log("  GET  /health")
+    console.log("  GET  /tx?status=&limit=")
+    console.log("  GET  /tx/:txHash/status")
+    console.log("  POST /tx/propose   { to, value, data }")
+    console.log("  relayer: dry-run (logs verdicts, writes nothing on-chain)")
+  })
+
+  for (const signal of ["SIGINT", "SIGTERM"] as const) {
+    process.on(signal, () => {
+      server.close(() => process.exit(0))
+    })
+  }
+}
+
+// Only start a server when this module is executed directly, so importing it
+// from tests or from another entrypoint stays side-effect free. pathToFileURL
+// handles Windows drive letters and separators, which a hand-built file:// URL
+// does not.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  startFromEnv()
 }
