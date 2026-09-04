@@ -20,7 +20,7 @@ Phases 0–2 are the hackathon path. Phases 3–7 turn it into a product.
 - [ ] Set `ANTHROPIC_API_KEY` in `backend/.env` — **it is not in the template** (see Phase 0.5)
 - [ ] `npx hardhat test` — expect **41 passing**
 - [ ] `forge test` — expect **12 passing**
-- [ ] `cd backend && npm test` — expect **460 passing**
+- [ ] `cd backend && npm test` — expect **442 passing**
 - [ ] Start a local chain: `anvil`
 - [ ] `npx hardhat run scripts/localDeploy.ts --network localhost`
 - [ ] Copy `frontend/.env.example` → `frontend/.env` (it ships working localhost defaults)
@@ -68,9 +68,10 @@ Already fixed, listed so nobody re-does them:
 
 Flagged by the System Reference, not independently confirmed:
 
-- [ ] Duplicate audit ledger — `auditLedger.ts` vs `auditLedgerSink.ts`. `auditLedgerSink`
-      is the wired one (both the audit API and the orchestrator use it). Confirm
-      `auditLedger.ts` is dead, then delete it.
+- [x] ~~Duplicate audit ledger~~ — confirmed dead (`auditLedger.ts` was imported only by
+      its own test) and deleted along with its 18 tests. It was an earlier, in-memory-only
+      iteration with no sink, no persistence and no replay; `auditLedgerSink.ts`
+      supersedes it entirely. Backend suite is now **442**, down from 460.
 - [ ] Possible drift between `frontend/src/policyParser.ts` and the backend compiler.
       Two parsers for one policy language is a correctness risk — add a shared test
       fixture both must satisfy, or delete one.
