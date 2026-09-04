@@ -42,14 +42,16 @@ blocked in the dashboard — not just in a test log.
 
 - [ ] **`ANTHROPIC_API_KEY` / `ANTHROPIC_MODEL` missing from `backend/.env.example`.**
       `llmReasoning.ts` reads both. A new contributor has no way to know.
-- [ ] **Conflicting chain defaults.** `backend/.env.example` has `CHAIN_ID=11155111`
-      (Sepolia); `frontend/.env.example` has `VITE_CHAIN=apothem`. Pick Apothem.
+- [x] ~~Conflicting chain defaults~~ — `CHAIN_ID` now defaults to `51` (Apothem),
+      matching `VITE_CHAIN`. Flagged as a Phase 1 blocker below.
 - [ ] **Foundry is not in CI.** `.github/workflows/ci.yml` runs `yarn`, `yarn build`,
       `yarn coverage` only. `forge test` never runs — so the fail-closed assertion,
       your single most important safety claim, is not gated on any push. Add the step.
-- [ ] **Legacy model pinned.** `llmReasoning.ts` still uses `claude-3-5-haiku-20241022`.
-      Current Haiku is `claude-haiku-4-5`; `claude-opus-5` is better for contextual
-      judgment. One line.
+- [x] ~~Legacy model pinned~~ — `DEFAULT_MODEL` is now `claude-haiku-4-5`. **Unverified
+      against the live API** (no credentials on the machine it was changed from); a bad
+      model ID degrades to the rule-engine verdict rather than failing loudly, so
+      confirm one real call succeeds before relying on LLM explanations in the demo.
+      `ANTHROPIC_MODEL` overrides it without a code change.
 
 Already fixed, listed so nobody re-does them:
 
@@ -74,8 +76,20 @@ Flagged by the System Reference, not independently confirmed:
 
 **The blocking phase.** Everything is built; none of it is demonstrable until this is done.
 
+> **Blocker before starting any real testnet watcher.** `CHAIN_ID` in `backend/.env`
+> selects which chain `backend/src/index.ts` polls. It must match the chain the Guard
+> is actually deployed on (`51` for Apothem) *and* the frontend's `VITE_CHAIN`. Get
+> this wrong and the watcher polls an empty chain: no verdicts are ever written, and
+> the Guard — correctly — fails closed on every transaction. It looks like a broken
+> Guard; it is a misconfigured watcher. The template now defaults to `51`; change it
+> and `VITE_CHAIN` together, never one alone.
+>
+> Note this does *not* affect `npm run dev:all`, which never starts the watcher.
+
 - [ ] Fund an Apothem account from the faucet
 - [ ] Set `PRIVATE_KEY` in root `.env`
+- [ ] Confirm `CHAIN_ID` (backend) and `VITE_CHAIN` (frontend) both name the chain you
+      are deploying to — see the blocker above
 - [ ] `npx hardhat run scripts/deployTestnet.ts --network apothem`
 - [ ] `npx hardhat run scripts/verifyDeployment.ts --network apothem` — the verification
       script already exists, use it
