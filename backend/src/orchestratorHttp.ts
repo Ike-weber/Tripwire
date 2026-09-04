@@ -2,12 +2,14 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import { pathToFileURL } from "node:url"
 import { keccak256, toHex } from "viem"
 
+import { AuditLedger, createJsonlSink, type AuditEventType } from "./auditLedgerSink.js"
 import {
   createMemoryStateStore,
   RiskOrchestrator,
   type ProcessingStatus,
   type ProposedTx,
   type RelayerSlot,
+  type TxProcessingState,
 } from "./riskOrchestrator.js"
 
 /**
@@ -147,16 +149,68 @@ function createLoggingRelayer(): RelayerSlot {
   }
 }
 
-function startFromEnv(): void {
+/**
+ * Maps a pipeline state transition onto an audit event type. The ledger models
+ * the decision lifecycle, not the queue's internal states, so the two
+ * intermediate statuses collapse into the phase they belong to.
+ */
+const AUDIT_EVENT_FOR_STATUS: Record<ProcessingStatus, AuditEventType | undefined> = {
+  received: "detected",
+  analyzing: "analysis",
+  verdict_ready: "verdict",
+  // A queue internal, not a decision-lifecycle phase - recording it would put a
+  // second, meaningless "analysis" between the verdict and its enforcement.
+  submitting: undefined,
+  submitted: "enforcement",
+  submission_failed: "failure",
+}
+
+/** Flattens the canonical verdict into the shape `AuditLedger.get` folds into a record. */
+function auditDataFor(state: TxProcessingState, note?: string): Record<string, unknown> {
+  const data: Record<string, unknown> = { status: state.status }
+  if (note) data.note = note
+  const c = state.canonical
+  if (c) {
+    data.score = c.score
+    data.status = c.status
+    data.action = c.action
+    data.explanation = c.explanation
+  }
+  return data
+}
+
+async function startFromEnv(): Promise<void> {
   const port = Number(process.env.ORCHESTRATOR_PORT ?? 3001)
   if (!Number.isInteger(port) || port <= 0 || port > 65535) {
     console.error(`ORCHESTRATOR_PORT must be a valid port number, got: ${process.env.ORCHESTRATOR_PORT}`)
     process.exit(1)
   }
 
+  // The same jsonl file the audit API reads, so the audit trail reflects this
+  // pipeline's decisions instead of being permanently empty. Default matches
+  // auditHttp's own AUDIT_LOG_PATH default.
+  const auditPath = process.env.AUDIT_LOG_PATH ?? "./.data/audit.jsonl"
+  const auditLedger =
+    auditPath === ":memory:"
+      ? undefined
+      : await AuditLedger.open({
+          safe: process.env.SAFE_ADDRESS ?? "0x0000000000000000000000000000000000000000",
+          chainId: Number(process.env.CHAIN_ID ?? 51),
+          sink: createJsonlSink(auditPath),
+          onError: (err) => {
+            console.error("[orchestrator:audit]", err)
+          },
+        })
+
   const orchestrator = RiskOrchestrator.create({
     relayer: createLoggingRelayer(),
     store: createMemoryStateStore(),
+    audit: auditLedger
+      ? (state, note) => {
+          const type = AUDIT_EVENT_FOR_STATUS[state.status]
+          if (type) auditLedger.log(state.txHash, type, "rule-engine", auditDataFor(state, note))
+        }
+      : undefined,
     onError: (err) => {
       console.error("[orchestrator]", err)
     },
@@ -179,6 +233,7 @@ function startFromEnv(): void {
     console.log("  GET  /tx/:txHash/status")
     console.log("  POST /tx/propose   { to, value, data }")
     console.log("  relayer: dry-run (logs verdicts, writes nothing on-chain)")
+    console.log(`  audit:   ${auditLedger ? `jsonl (${auditPath})` : "disabled (AUDIT_LOG_PATH=:memory:)"}`)
   })
 
   for (const signal of ["SIGINT", "SIGTERM"] as const) {
@@ -193,5 +248,5 @@ function startFromEnv(): void {
 // handles Windows drive letters and separators, which a hand-built file:// URL
 // does not.
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  startFromEnv()
+  void startFromEnv()
 }

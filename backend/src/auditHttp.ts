@@ -1,4 +1,5 @@
 import { createServer, type Server, type ServerResponse } from "node:http"
+import { stat } from "node:fs/promises"
 import { pathToFileURL } from "node:url"
 
 import { AuditLedger, createJsonlSink, createMemorySink, type AuditFilter } from "./auditLedgerSink.js"
@@ -26,7 +27,13 @@ function sendJson(res: ServerResponse, status: number, body: unknown): void {
   res.end(JSON.stringify(body))
 }
 
-export function createAuditHttpServer(ledger: AuditLedger): Server {
+/**
+ * Only the read surface the API needs. Typed structurally so a reloading
+ * delegate (see the entrypoint) can stand in for a live AuditLedger.
+ */
+export type AuditReadModel = Pick<AuditLedger, "get" | "query" | "timeline">
+
+export function createAuditHttpServer(ledger: AuditReadModel): Server {
   return createServer((req, res) => {
     const url = new URL(req.url ?? "/", "http://localhost")
 
@@ -102,7 +109,48 @@ async function startFromEnv(): Promise<void> {
     },
   })
 
-  const server = createAuditHttpServer(ledger)
+  /**
+   * AuditLedger replays its sink once, at open(). The orchestrator is a
+   * separate process appending to the same file, so without this the API
+   * would serve a snapshot frozen at boot and the dashboard would only ever
+   * update on restart. Re-open when the file's mtime moves; a poll that finds
+   * nothing new costs one stat().
+   */
+  let current = ledger
+  let lastMtimeMs = 0
+  async function fresh(): Promise<AuditReadModel> {
+    if (inMemory) return current
+    try {
+      const { mtimeMs } = await stat(logPath)
+      if (mtimeMs !== lastMtimeMs) {
+        lastMtimeMs = mtimeMs
+        current = await AuditLedger.open({
+          safe: process.env.SAFE_ADDRESS ?? "0x0000000000000000000000000000000000000000",
+          chainId: Number(process.env.CHAIN_ID ?? 51),
+          sink,
+        })
+      }
+    } catch {
+      // No file yet, or a torn read - keep serving what we already have.
+    }
+    return current
+  }
+
+  const live: AuditReadModel = {
+    get: (txHash) => current.get(txHash),
+    query: (filter) => current.query(filter),
+    timeline: (txHash) => current.timeline(txHash),
+  }
+
+  const server = createAuditHttpServer(live)
+
+  // Poll on a timer rather than per-request: the read path stays synchronous,
+  // so firing an un-awaited reload from a request handler would race it and
+  // still serve the old snapshot. A 1s tick is well inside the dashboard's own
+  // poll interval. unref() so this never holds the process open.
+  const reloadTimer = setInterval(() => void fresh(), 1000)
+  reloadTimer.unref()
+  await fresh()
 
   server.on("error", (err: NodeJS.ErrnoException) => {
     if (err.code === "EADDRINUSE") {
@@ -122,6 +170,7 @@ async function startFromEnv(): Promise<void> {
 
   for (const signal of ["SIGINT", "SIGTERM"] as const) {
     process.on(signal, () => {
+      clearInterval(reloadTimer)
       server.close(() => process.exit(0))
     })
   }
