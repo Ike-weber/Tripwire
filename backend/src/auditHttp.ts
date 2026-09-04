@@ -86,10 +86,12 @@ async function startFromEnv(): Promise<void> {
     process.exit(1)
   }
 
-  // A file sink survives restarts, which is what makes the timeline worth
-  // reading; without AUDIT_LOG_PATH the ledger is in-memory and resets.
-  const logPath = process.env.AUDIT_LOG_PATH
-  const sink = logPath ? createJsonlSink(logPath) : createMemorySink()
+  // Persist by default: an audit trail that resets on restart is not an audit
+  // trail. createJsonlSink mkdir -p's its directory and reads a missing file as
+  // empty, so this is safe on a fresh clone. AUDIT_LOG_PATH=:memory: opts out.
+  const logPath = process.env.AUDIT_LOG_PATH ?? "./.data/audit.jsonl"
+  const inMemory = logPath === ":memory:"
+  const sink = inMemory ? createMemorySink() : createJsonlSink(logPath)
 
   const ledger = await AuditLedger.open({
     safe: process.env.SAFE_ADDRESS ?? "0x0000000000000000000000000000000000000000",
@@ -115,7 +117,7 @@ async function startFromEnv(): Promise<void> {
     console.log("  GET /audit/health")
     console.log("  GET /audit?safe=&txHash=&verdictId=&riskLevel=&enforcementStatus=&limit=")
     console.log("  GET /audit/timeline/:txHash")
-    console.log(`  sink: ${logPath ? `jsonl (${logPath})` : "in-memory (set AUDIT_LOG_PATH to persist)"}`)
+    console.log(`  sink: ${inMemory ? "in-memory (AUDIT_LOG_PATH=:memory:)" : `jsonl (${logPath})`}`)
   })
 
   for (const signal of ["SIGINT", "SIGTERM"] as const) {
