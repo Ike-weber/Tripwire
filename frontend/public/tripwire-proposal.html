@@ -1,0 +1,645 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tripwire — Proposal</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,500&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --paper:#F4F5F1; --ink:#16201D; --muted:#5B6560; --line:#D8D9D2;
+    --accent:#1B6B63; --accent-soft:#E4EFEC;
+    --accent2:#B5481C; --accent2-soft:#F3E3D6;
+    --card:#FFFFFF;
+    --font-display:'Newsreader',Georgia,'Times New Roman',serif;
+    --font-body:'IBM Plex Sans',-apple-system,'Segoe UI',sans-serif;
+    --font-mono:'IBM Plex Mono',SFMono-Regular,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#10151A; --ink:#E7EAE4; --muted:#8B968E; --line:#263029;
+      --accent:#4FBDB0; --accent-soft:#16302C;
+      --accent2:#E0813F; --accent2-soft:#3A2417;
+      --card:#161C21;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#10151A; --ink:#E7EAE4; --muted:#8B968E; --line:#263029;
+    --accent:#4FBDB0; --accent-soft:#16302C;
+    --accent2:#E0813F; --accent2-soft:#3A2417;
+    --card:#161C21;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:var(--font-body); line-height:1.6; font-size:16px;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{ font-family:var(--font-display); font-weight:600; text-wrap:balance; color:var(--ink); }
+  a{ color:var(--accent); }
+  code, .mono{ font-family:var(--font-mono); }
+  ::selection{ background:var(--accent-soft); }
+
+  /* ---- top bar ---- */
+  .topbar{
+    position:sticky; top:0; z-index:20; background:color-mix(in srgb, var(--paper) 88%, transparent);
+    backdrop-filter:blur(8px); border-bottom:1px solid var(--line);
+  }
+  .topbar-inner{
+    max-width:1080px; margin:0 auto; padding:12px 24px;
+    display:flex; align-items:center; gap:18px; overflow-x:auto;
+  }
+  .topbar-brand{ font-family:var(--font-display); font-weight:600; font-size:17px; white-space:nowrap; }
+  .topbar-brand span{ color:var(--accent); }
+  .navlinks{ display:flex; gap:4px; flex-wrap:nowrap; }
+  .navlinks a{
+    font-size:12.5px; text-decoration:none; color:var(--muted); white-space:nowrap;
+    padding:6px 10px; border-radius:999px; border:1px solid transparent;
+  }
+  .navlinks a:hover{ border-color:var(--line); color:var(--ink); }
+
+  /* ---- shell ---- */
+  .wrap{ max-width:760px; margin:0 auto; padding:0 24px; }
+  .wide{ max-width:1080px; margin:0 auto; padding:0 24px; }
+  section{ padding:56px 0; border-bottom:1px solid var(--line); }
+  section:last-of-type{ border-bottom:none; }
+
+  .eyebrow{
+    font-family:var(--font-mono); font-size:11.5px; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--accent); font-weight:600; margin:0 0 10px;
+  }
+  h2{ font-size:28px; margin:0 0 6px; }
+  h3{ font-size:19px; margin:26px 0 8px; }
+  p{ margin:0 0 14px; }
+  .lede{ font-size:18px; color:var(--muted); }
+  .muted{ color:var(--muted); }
+
+  /* ---- cover ---- */
+  .cover{ padding:64px 0 48px; border-bottom:1px solid var(--line); }
+  .cover .kicker{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--accent2); font-weight:600; margin-bottom:18px;
+  }
+  .cover h1{ font-size:56px; line-height:1.02; margin:0 0 6px; }
+  .cover .tag{ font-family:var(--font-display); font-style:italic; font-size:21px; color:var(--muted); margin:0 0 26px; }
+  .brief{
+    border-left:3px solid var(--accent); background:var(--accent-soft);
+    padding:16px 20px; border-radius:0 8px 8px 0; font-size:14.5px; color:var(--ink);
+  }
+  .brief b{ font-family:var(--font-mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase; display:block; margin-bottom:6px; color:var(--accent); }
+  .meta-row{ display:flex; gap:28px; margin-top:28px; flex-wrap:wrap; }
+  .meta-row div{ font-size:12.5px; }
+  .meta-row .k{ font-family:var(--font-mono); text-transform:uppercase; letter-spacing:.08em; color:var(--muted); font-size:10.5px; display:block; margin-bottom:3px; }
+
+  /* ---- tables ---- */
+  table{ width:100%; border-collapse:collapse; font-size:14px; }
+  thead th{
+    text-align:left; font-family:var(--font-mono); font-size:10.5px; letter-spacing:.07em; text-transform:uppercase;
+    color:var(--muted); font-weight:600; padding:8px 12px; border-bottom:1px solid var(--line);
+  }
+  tbody td{ padding:12px; border-bottom:1px solid var(--line); vertical-align:top; }
+  tbody tr:last-child td{ border-bottom:none; }
+  .table-scroll{ overflow-x:auto; border:1px solid var(--line); border-radius:10px; }
+  .table-scroll table{ min-width:640px; }
+  .tag-pill{
+    display:inline-block; font-family:var(--font-mono); font-size:10.5px; padding:2px 8px; border-radius:999px;
+    background:var(--accent-soft); color:var(--accent); font-weight:600;
+  }
+  .tag-pill.warn{ background:var(--accent2-soft); color:var(--accent2); }
+
+  /* ---- pillars / cards ---- */
+  .grid3{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px;
+  }
+  .card h4{ font-family:var(--font-body); font-size:15px; font-weight:600; margin:12px 0 6px; }
+  .card p{ font-size:13.5px; color:var(--muted); margin:0; }
+  .icon{ width:38px; height:38px; color:var(--accent); }
+  .icon svg{ display:block; width:100%; height:100%; }
+
+  .pillar-num{ font-family:var(--font-mono); font-size:11px; color:var(--muted); }
+
+  /* ---- diagrams ---- */
+  figure{ margin:20px 0 6px; }
+  figure svg{ width:100%; height:auto; display:block; }
+  figcaption{ font-size:12.5px; color:var(--muted); margin-top:10px; }
+  .diagram-frame{ border:1px solid var(--line); border-radius:12px; padding:18px; background:var(--card); }
+
+  /* ---- priority list ---- */
+  .plist{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px; }
+  .plist li{ display:flex; gap:12px; align-items:flex-start; border:1px solid var(--line); border-radius:10px; padding:12px 14px; background:var(--card); }
+  .plevel{ font-family:var(--font-mono); font-size:11px; font-weight:600; padding:2px 8px; border-radius:6px; white-space:nowrap; margin-top:2px; }
+  .p0{ background:var(--accent-soft); color:var(--accent); }
+  .p1{ background:var(--accent2-soft); color:var(--accent2); }
+  .p2{ background:transparent; border:1px solid var(--line); color:var(--muted); }
+  .plist b{ display:block; font-size:14px; }
+  .plist span.desc{ font-size:13px; color:var(--muted); }
+
+  /* ---- demo script ---- */
+  .script{ display:flex; flex-direction:column; }
+  .script-row{ display:grid; grid-template-columns:88px 1fr; gap:16px; padding:14px 0; border-bottom:1px solid var(--line); }
+  .script-row:last-child{ border-bottom:none; }
+  .script-time{ font-family:var(--font-mono); font-size:12.5px; color:var(--accent); white-space:nowrap; }
+  .script-row h4{ margin:0 0 4px; font-size:14.5px; font-family:var(--font-body); font-weight:600; }
+  .script-row p{ margin:0; font-size:13.5px; color:var(--muted); }
+
+  /* ---- code block ---- */
+  pre{
+    background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px 18px;
+    overflow-x:auto; font-family:var(--font-mono); font-size:12.5px; line-height:1.55; color:var(--ink);
+  }
+  .cap{ font-family:var(--font-mono); font-size:11px; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); margin:0 0 6px; }
+
+  footer{ padding:36px 0 60px; }
+  footer p{ font-size:12.5px; color:var(--muted); }
+
+  @media (max-width:680px){
+    .cover h1{ font-size:38px; }
+    .grid3{ grid-template-columns:1fr; }
+    .meta-row{ gap:18px; }
+  }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="topbar-brand"><span>◆</span> Tripwire</div>
+    <nav class="navlinks">
+      <a href="#thesis">Thesis</a>
+      <a href="#landscape">Landscape</a>
+      <a href="#architecture">Architecture</a>
+      <a href="#mechanisms">Protection</a>
+      <a href="#ai-engine">AI engine</a>
+      <a href="#timeline">Timeline</a>
+      <a href="#demo-script">Demo</a>
+      <a href="#appendix">Appendix</a>
+    </nav>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="cover">
+    <div class="kicker">Hackathon proposal · Track 03 · 20-hour build</div>
+    <h1>Tripwire</h1>
+    <p class="tag">The circuit breaker your wallet never had.</p>
+    <div class="brief">
+      <b>The brief — Smart Contract Financial Guardian</b>
+      Blockchain transactions are irreversible, while users and organizations may not detect malicious or abnormal activity until after funds have moved. Build a security layer that continuously monitors transactions and wallet behavior, detects abnormal activity, calculates risk, and interacts with smart contracts to provide configurable protection — transaction limits, delayed execution, or emergency controls.
+    </div>
+    <div class="meta-row">
+      <div><span class="k">Build window</span>20 hours</div>
+      <div><span class="k">Chain</span>EVM testnet (Sepolia / XDC Apothem)</div>
+      <div><span class="k">Base primitive</span>Safe{Wallet} + Zodiac Guard</div>
+      <div><span class="k">Date</span>2026-09-04</div>
+    </div>
+  </div>
+
+  <section id="thesis">
+    <p class="eyebrow">01 · Thesis</p>
+    <h2>Protect the wallet, not the protocol.</h2>
+    <p class="lede">Every serious entry in this space is <b>protocol-side</b> — infrastructure a dApp or rollup opts into. Tripwire is <b>wallet-side</b>: a self-custody guardian that protects a wallet or DAO treasury against <i>anything</i> it interacts with, with zero cooperation required from the other end.</p>
+    <p>The brief's own diagram is the spec. We build it literally, and each arrow is a real component, not a slide:</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Brief's pipeline</th><th>What we actually ship</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">Blockchain</td><td>A Safe multisig (or single-owner Safe) on an EVM testnet, holding real testnet funds.</td></tr>
+          <tr><td class="mono">Real-time monitoring</td><td>An off-chain watcher that reads every <i>pending</i> Safe transaction the moment a signer proposes it — before it has enough signatures to execute.</td></tr>
+          <tr><td class="mono">AI risk analysis</td><td>A rule engine + fork simulation + an LLM reasoning pass that turns raw calldata into a 0–100 score and a plain-English reason.</td></tr>
+          <tr><td class="mono">Suspicious transaction</td><td>A drainer contract we write ourselves, that requests <code>setApprovalForAll</code> then calls <code>transferFrom</code> — the exact pattern behind most 2024–2026 wallet-drain losses.</td></tr>
+          <tr><td class="mono">Smart-contract protection</td><td>A Zodiac Guard on the Safe that reads the verdict and enforces limits, delay, or a full freeze — <i>before</i> the transfer executes.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="landscape">
+    <p class="eyebrow">02 · Landscape</p>
+    <h2>Where the real gap is</h2>
+    <p>SolidityScan — the tool named in the prompt — is a static/AI source-code scanner: it audits a contract before deployment. It has no runtime monitoring or wallet protection, so it isn't really competing in this lane. The real comparables, and why none of them solve the individual wallet's problem:</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Product</th><th>What it does</th><th>Where it lives</th><th>The gap it leaves</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><b>SolidityScan</b></td>
+            <td>700+ detector static/AI vulnerability scan, audit reports</td>
+            <td>Pre-deployment, CI</td>
+            <td>No runtime monitoring, no wallet-side protection at all.</td>
+          </tr>
+          <tr>
+            <td><b>Forta Firewall</b></td>
+            <td>Pre-execution AI simulation, &lt;10ms risk score, block above threshold</td>
+            <td>Protocol / rollup RPC layer</td>
+            <td>The <i>target</i> contract has to integrate it. A victim's own wallet is unprotected unless the dApp they got tricked by opted in.</td>
+          </tr>
+          <tr>
+            <td><b>BlockSec Phalcon Compliance</b></td>
+            <td>AML/CFT risk feed checked before finalizing a tx</td>
+            <td>Protocol-side compliance hooks</td>
+            <td>Framed for regulators and protocols, not for a user protecting their own funds.</td>
+          </tr>
+          <tr>
+            <td><b>Harpie</b> <span class="tag-pill warn">shut down 2025</span></td>
+            <td>Wallet-side drain protection</td>
+            <td>Consumer wallet</td>
+            <td>Proved the demand, failed on unit economics — not a reason to avoid the pattern in a 20-hour build.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top:14px"><b>Our edge:</b> Tripwire sits inside the wallet's own execution path (a Zodiac Guard on a Safe), so it protects against <i>any</i> counterparty — a phishing site, a fake airdrop, a compromised frontend — and gives the owner real levers, not just an allow/deny bit: a spending limit, a cooling-off delay, and a panic switch.</p>
+  </section>
+
+  <section id="concept">
+    <p class="eyebrow">03 · Concept</p>
+    <h2>Sense → Reason → Act</h2>
+    <p class="lede">Three pillars, mapped one-to-one onto the brief's diagram and onto the demo we'll actually run.</p>
+    <div class="grid3">
+      <div class="card">
+        <span class="pillar-num">01</span>
+        <div class="icon"><svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="18" fill="none" stroke="currentColor" stroke-width="2.5"/><circle cx="24" cy="24" r="4" fill="currentColor"/><path d="M24 6 L24 11 M24 37 L24 42 M6 24 L11 24 M37 24 L42 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></div>
+        <h4>Sense</h4>
+        <p>Watch every proposed Safe transaction the instant a signer creates it — while it's still sitting unsigned, before it can execute.</p>
+      </div>
+      <div class="card">
+        <span class="pillar-num">02</span>
+        <div class="icon"><svg viewBox="0 0 48 48"><path d="M24 6 L40 15 V27 C40 36 33 42 24 44 C15 42 8 36 8 27 V15 Z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><path d="M17 24 L22 29 L31 18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h4>Reason</h4>
+        <p>Score it: rule engine + a forked-chain simulation of the actual balance/allowance change, refined by an LLM that explains its reasoning in plain English.</p>
+      </div>
+      <div class="card">
+        <span class="pillar-num">03</span>
+        <div class="icon"><svg viewBox="0 0 48 48"><polygon points="17,5 31,5 43,17 43,31 31,43 17,43 5,31 5,17" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><path d="M18 24 L23 24 M27 24 L32 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></div>
+        <h4>Act</h4>
+        <p>Write the verdict on-chain. The Guard reads it at execution time and allows, delays, or trips the breaker — the owner set the rules in advance.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="architecture">
+    <p class="eyebrow">04 · Architecture</p>
+    <h2>How a transaction actually moves</h2>
+    <p>The key constraint that makes this buildable in 20 hours: a Safe transaction isn't instant. A signer <i>proposes</i> it off-chain, it sits pending until enough signatures collect, and only then does someone call <code>execTransaction</code>. That pending window is exactly where our off-chain risk engine gets to do its work and write a verdict on-chain — the Guard never needs to make a synchronous off-chain call mid-transaction.</p>
+    <div class="diagram-frame">
+      <figure>
+        <svg viewBox="0 0 1140 400" role="img" aria-label="A wallet signer proposes a transaction targeting a possibly malicious contract. The off-chain risk engine reads the proposal, scores it, and writes a verdict to an on-chain RiskRegistry. When the signers later execute the transaction, the Zodiac Guard reads the registry and allows, delays, or reverts it. The risk engine also alerts a human-guardian dashboard, which can independently override or freeze the guard.">
+          <defs>
+            <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+            </marker>
+          </defs>
+          <!-- attacker -->
+          <rect x="20" y="50" width="150" height="60" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/>
+          <text x="95" y="76" text-anchor="middle" font-size="11.5" fill="currentColor">Target contract</text>
+          <text x="95" y="92" text-anchor="middle" font-size="11.5" fill="currentColor" opacity=".7">(possibly malicious)</text>
+          <line x1="95" y1="110" x2="95" y2="168" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrow)"/>
+
+          <!-- main row -->
+          <rect x="20" y="170" width="150" height="64" rx="8" fill="none" stroke="currentColor" stroke-width="1.6"/>
+          <text x="95" y="197" text-anchor="middle" font-size="12.5" fill="currentColor">Wallet /</text>
+          <text x="95" y="213" text-anchor="middle" font-size="12.5" fill="currentColor">Safe signers</text>
+
+          <rect x="230" y="170" width="220" height="64" rx="8" fill="none" stroke="currentColor" stroke-width="1.6"/>
+          <text x="340" y="197" text-anchor="middle" font-size="12.5" fill="currentColor">Off-chain risk engine</text>
+          <text x="340" y="213" text-anchor="middle" font-size="11" fill="currentColor" opacity=".7">rules + simulation + LLM</text>
+
+          <rect x="520" y="170" width="170" height="64" rx="8" fill="none" stroke="currentColor" stroke-width="1.6"/>
+          <text x="605" y="197" text-anchor="middle" font-size="12.5" fill="currentColor">RiskRegistry</text>
+          <text x="605" y="213" text-anchor="middle" font-size="11" fill="currentColor" opacity=".7">on-chain</text>
+
+          <rect x="750" y="170" width="150" height="64" rx="8" fill="var(--accent-soft)" stroke="currentColor" stroke-width="1.6"/>
+          <text x="825" y="197" text-anchor="middle" font-size="12.5" fill="currentColor">Zodiac Guard</text>
+          <text x="825" y="213" text-anchor="middle" font-size="11" fill="currentColor" opacity=".7">on the Safe</text>
+
+          <rect x="940" y="170" width="170" height="64" rx="8" fill="none" stroke="currentColor" stroke-width="1.6"/>
+          <text x="1025" y="197" text-anchor="middle" font-size="12.5" fill="currentColor">Outcome</text>
+          <text x="1025" y="213" text-anchor="middle" font-size="11" fill="currentColor" opacity=".7">allow / delay / revert</text>
+
+          <!-- main arrows -->
+          <line x1="170" y1="202" x2="228" y2="202" stroke="currentColor" stroke-width="1.6" marker-end="url(#arrow)"/>
+          <text x="199" y="192" text-anchor="middle" font-size="10.5" fill="currentColor">proposes tx</text>
+
+          <line x1="450" y1="202" x2="518" y2="202" stroke="currentColor" stroke-width="1.6" marker-end="url(#arrow)"/>
+          <text x="484" y="192" text-anchor="middle" font-size="10.5" fill="currentColor">writes verdict</text>
+
+          <line x1="690" y1="202" x2="748" y2="202" stroke="currentColor" stroke-width="1.6" marker-end="url(#arrow)"/>
+          <text x="719" y="192" text-anchor="middle" font-size="10.5" fill="currentColor">reads verdict</text>
+
+          <line x1="900" y1="202" x2="938" y2="202" stroke="currentColor" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+          <!-- execute elbow -->
+          <polyline points="150,170 150,140 825,140 825,168" fill="none" stroke="currentColor" stroke-width="1.6" marker-end="url(#arrow)"/>
+          <text x="487" y="132" text-anchor="middle" font-size="10.5" fill="currentColor">execTransaction()</text>
+
+          <!-- dashboard -->
+          <rect x="230" y="300" width="280" height="60" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/>
+          <text x="370" y="326" text-anchor="middle" font-size="12" fill="currentColor">Dashboard</text>
+          <text x="370" y="342" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".7">human guardian</text>
+
+          <line x1="340" y1="234" x2="340" y2="298" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrow)"/>
+          <text x="418" y="270" text-anchor="middle" font-size="10.5" fill="currentColor">alert + explanation</text>
+
+          <polyline points="510,330 825,330 825,236" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrow)"/>
+          <text x="700" y="322" text-anchor="middle" font-size="10.5" fill="currentColor">override / freeze</text>
+        </svg>
+        <figcaption>Fig. 1 — A signer proposes a transaction; the off-chain engine scores it during the pending window and writes a verdict the Guard reads at execution. A human guardian sees every alert and can independently override or trip the freeze.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section id="mechanisms">
+    <p class="eyebrow">05 · Protection mechanisms</p>
+    <h2>Three levers, configured in advance</h2>
+    <div class="grid3">
+      <div class="card">
+        <div class="icon"><svg viewBox="0 0 48 48"><rect x="4" y="20" width="40" height="8" rx="4" fill="none" stroke="currentColor" stroke-width="2"/><rect x="4" y="20" width="26" height="8" rx="4" fill="currentColor" opacity=".3"/><line x1="30" y1="12" x2="30" y2="36" stroke="currentColor" stroke-width="2"/><path d="M30 12 L34 16 M30 12 L26 16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
+        <h4>Transaction limits</h4>
+        <p>Per-tx cap and a rolling 24h velocity cap, tracked in the Guard's own storage. A tx over the line doesn't fail silently — it routes into the delay queue instead.</p>
+      </div>
+      <div class="card">
+        <div class="icon"><svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="18" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M24 24 L24 13 M24 24 L32 27" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></div>
+        <h4>Delayed execution</h4>
+        <p>Anything above the limit, or to a first-seen counterparty, sits in a timelock. The window is the risk engine's chance to review and cancel before it fires.</p>
+      </div>
+      <div class="card">
+        <div class="icon"><svg viewBox="0 0 48 48"><polygon points="17,5 31,5 43,17 43,31 31,43 17,43 5,31 5,17" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><path d="M18 24 L23 24 M27 24 L32 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></div>
+        <h4>Emergency freeze</h4>
+        <p>A critical score, or the owner's own panic button, trips the breaker: every outgoing call from the Safe reverts until a guardian explicitly unfreezes it.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="ai-engine">
+    <p class="eyebrow">06 · AI risk engine</p>
+    <h2>What actually gets scored</h2>
+    <p>Deterministic signal extraction feeds a fast rule-based base score; a forked-chain simulation and an LLM reasoning pass then adjust it and produce the explanation a human reads.</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Signal</th><th>Why it matters</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">setApprovalForAll<br><span class="muted">0xa22cb465</span></td><td>Grants a third party control over an entire NFT collection — the single most common drainer primitive.</td></tr>
+          <tr><td class="mono">approve(spender, amount)<br><span class="muted">0x095ea7b3</span></td><td>Flagged hard when <code>amount</code> is <code>type(uint256).max</code> — an unlimited, indefinite allowance.</td></tr>
+          <tr><td class="mono">permit(...)<br><span class="muted">0xd505accf</span></td><td>Off-chain signature granting an allowance with no on-chain tx from the victim — invisible to naive monitors.</td></tr>
+          <tr><td>First-seen counterparty</td><td>Contract or EOA the wallet has never interacted with before, weighted against wallet age.</td></tr>
+          <tr><td>Unverified / freshly deployed contract</td><td>No source on the block explorer, or deployed within the last few hours.</td></tr>
+          <tr><td>Amount vs. historical percentile</td><td>Value far above the wallet's own p95 spend is anomalous even with no other signal.</td></tr>
+          <tr><td>Blacklist match</td><td>Address appears on a scam-address feed (GoPlus Security API / ScamSniffer list).</td></tr>
+          <tr><td>Fork simulation diff</td><td>Replay the exact calldata on an Anvil fork: does the wallet's real balance or allowance state change in a way nothing in the tx description admits to?</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <h3>Scoring pipeline</h3>
+    <p>Proposed tx → feature extraction → rule-engine base score → Anvil fork simulation → LLM reasoning pass (structured JSON: score, label, explanation) → verdict written to <code class="mono">RiskRegistry</code>.</p>
+    <p>The LLM's job is specifically the part rules are bad at: judging <i>context</i>. An unlimited approval to a well-known, verified DEX router is routine; the same call to a contract deployed 40 minutes ago that has already drained three other wallets is not — and the difference is exactly the kind of reasoning worth spending a model call on, not a rule worth hand-writing.</p>
+  </section>
+
+  <section id="stack">
+    <p class="eyebrow">07 · Tech stack</p>
+    <h2>What we actually reach for</h2>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Layer</th><th>Tool</th><th>Why this one</th></tr></thead>
+        <tbody>
+          <tr><td>Wallet + Guard</td><td class="mono">Safe{Wallet} + Zodiac Guard, Foundry</td><td>Audited, battle-tested primitive — <code>checkTransaction</code> is built for exactly this hook.</td></tr>
+          <tr><td>Chain</td><td>Sepolia (default) or XDC Apothem testnet</td><td>Fast faucets, wide tooling support. Apothem is a stretch target specifically if this track has an XDC-aligned prize or sponsor — same Guard contract, redeployed, so the cost of the bonus is one deploy script, not new logic.</td></tr>
+          <tr><td>Simulation</td><td>Anvil fork</td><td>Local, instant, no external dependency for the live demo.</td></tr>
+          <tr><td>Pending-tx source</td><td>Safe Transaction Service API</td><td>Gives us the proposed-but-unexecuted queue for free — no custom mempool watcher needed.</td></tr>
+          <tr><td>Backend</td><td>Node.js + viem</td><td>Typed, fast to iterate, one language across watcher/relayer/API.</td></tr>
+          <tr><td>Risk data</td><td>GoPlus Security API</td><td>Free-tier address/token risk lookups, good enough for a demo blacklist.</td></tr>
+          <tr><td>AI reasoning</td><td>Claude API, structured output</td><td>Function-calling / JSON mode keeps the score+explanation machine-parseable.</td></tr>
+          <tr><td>Relayer</td><td>Backend-held signer key</td><td>Writes verdicts to <code>RiskRegistry</code>; the one component with real key custody, kept small and auditable.</td></tr>
+          <tr><td>Frontend</td><td>React + wagmi/viem + Vite</td><td>Fastest path to a live wallet-connected dashboard.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="timeline">
+    <p class="eyebrow">08 · 20-hour build plan</p>
+    <h2>Four tracks, three checkpoints</h2>
+    <p>Four workstreams run in parallel from hour zero. The checkpoints at 8h, 14h and 18h are the actual "cut line" moments — if a track is behind at a checkpoint, drop to the next tier down in the <a href="#stretch">priority ladder</a> rather than slip the schedule.</p>
+    <div class="diagram-frame">
+      <figure>
+        <svg viewBox="0 0 1100 270" role="img" aria-label="Gantt-style timeline across four lanes — contracts, backend and AI, frontend, and integration and demo — over 20 hours, with checkpoint markers at hour 8, hour 14 and hour 18.">
+          <!-- axis -->
+          <line x1="140" y1="40" x2="1060" y2="40" stroke="currentColor" stroke-width="1.2"/>
+          <g font-size="10.5" fill="currentColor">
+            <text x="140" y="30">0h</text><text x="232" y="30">2h</text><text x="324" y="30">4h</text><text x="416" y="30">6h</text>
+            <text x="508" y="30">8h</text><text x="600" y="30">10h</text><text x="692" y="30">12h</text><text x="784" y="30">14h</text>
+            <text x="876" y="30">16h</text><text x="968" y="30">18h</text><text x="1050" y="30">20h</text>
+          </g>
+          <g stroke="currentColor" stroke-width="1">
+            <line x1="140" y1="36" x2="140" y2="44"/><line x1="232" y1="36" x2="232" y2="44"/><line x1="324" y1="36" x2="324" y2="44"/>
+            <line x1="416" y1="36" x2="416" y2="44"/><line x1="508" y1="36" x2="508" y2="44"/><line x1="600" y1="36" x2="600" y2="44"/>
+            <line x1="692" y1="36" x2="692" y2="44"/><line x1="784" y1="36" x2="784" y2="44"/><line x1="876" y1="36" x2="876" y2="44"/>
+            <line x1="968" y1="36" x2="968" y2="44"/><line x1="1060" y1="36" x2="1060" y2="44"/>
+          </g>
+          <!-- checkpoints -->
+          <g stroke="currentColor" stroke-width="1" stroke-dasharray="3 3" opacity=".55">
+            <line x1="508" y1="40" x2="508" y2="250"/><line x1="784" y1="40" x2="784" y2="250"/><line x1="968" y1="40" x2="968" y2="250"/>
+          </g>
+          <g font-size="10" fill="currentColor" text-anchor="middle" opacity=".8">
+            <text x="508" y="258">check 1</text><text x="784" y="258">check 2</text><text x="968" y="258">check 3</text>
+          </g>
+
+          <!-- lane labels -->
+          <g font-size="11.5" fill="currentColor">
+            <text x="12" y="78">Contracts</text>
+            <text x="12" y="128">Backend / AI</text>
+            <text x="12" y="178">Frontend</text>
+            <text x="12" y="228">Integration</text>
+          </g>
+
+          <!-- contracts lane y 58-90 -->
+          <g stroke="currentColor" stroke-width="1" fill="var(--accent-soft)">
+            <rect x="140" y="58" width="184" height="32" rx="5"/>
+            <rect x="324" y="58" width="230" height="32" rx="5"/>
+            <rect x="554" y="58" width="230" height="32" rx="5"/>
+            <rect x="784" y="58" width="276" height="32" rx="5" fill="none" stroke-dasharray="3 3"/>
+          </g>
+          <g font-size="10" fill="currentColor" text-anchor="middle">
+            <text x="232" y="78">Guard + limits</text>
+            <text x="439" y="78">Timelock + freeze</text>
+            <text x="669" y="78">RiskRegistry + tests</text>
+            <text x="922" y="78">on-call / hardening</text>
+          </g>
+
+          <!-- backend lane y 108-140 -->
+          <g stroke="currentColor" stroke-width="1" fill="var(--accent-soft)">
+            <rect x="140" y="108" width="138" height="32" rx="5"/>
+            <rect x="278" y="108" width="276" height="32" rx="5"/>
+            <rect x="554" y="108" width="230" height="32" rx="5"/>
+            <rect x="784" y="108" width="184" height="32" rx="5"/>
+            <rect x="968" y="108" width="92" height="32" rx="5" fill="none" stroke-dasharray="3 3"/>
+          </g>
+          <g font-size="10" fill="currentColor" text-anchor="middle">
+            <text x="209" y="128">Indexer</text>
+            <text x="416" y="128">Rules + simulation</text>
+            <text x="669" y="128">LLM scoring</text>
+            <text x="876" y="128">Relayer</text>
+            <text x="1014" y="128">Bug bash</text>
+          </g>
+
+          <!-- frontend lane y 158-190 -->
+          <g stroke="currentColor" stroke-width="1" fill="var(--accent-soft)">
+            <rect x="140" y="158" width="138" height="32" rx="5" fill="none" stroke-dasharray="3 3"/>
+            <rect x="278" y="158" width="322" height="32" rx="5"/>
+            <rect x="600" y="158" width="276" height="32" rx="5"/>
+            <rect x="876" y="158" width="184" height="32" rx="5"/>
+          </g>
+          <g font-size="10" fill="currentColor" text-anchor="middle">
+            <text x="600" y="178">Dashboard + live feed</text>
+            <text x="738" y="178"></text>
+            <text x="968" y="178">Attack demo btn</text>
+          </g>
+
+          <!-- integration lane y 208-240 -->
+          <g stroke="currentColor" stroke-width="1" fill="var(--accent-soft)">
+            <rect x="140" y="208" width="414" height="32" rx="5" fill="none" stroke-dasharray="3 3"/>
+            <rect x="554" y="208" width="184" height="32" rx="5"/>
+            <rect x="738" y="208" width="230" height="32" rx="5"/>
+            <rect x="968" y="208" width="92" height="32" rx="5"/>
+          </g>
+          <g font-size="10" fill="currentColor" text-anchor="middle">
+            <text x="646" y="228">E2E: benign</text>
+            <text x="853" y="228">E2E: attack caught</text>
+            <text x="1014" y="228">Submit</text>
+          </g>
+        </svg>
+        <figcaption>Fig. 2 — Contracts and backend lead; frontend and integration pick up their outputs from hour 3–9 onward. Every checkpoint is a go/no-go against the priority ladder below, not a soft target.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section id="roles">
+    <p class="eyebrow">09 · Team roles</p>
+    <h2>Split by track, not by hour</h2>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Role</th><th>Owns</th><th>Hands off at</th></tr></thead>
+        <tbody>
+          <tr><td><b>Contracts</b></td><td>Guard, timelock, freeze switch, RiskRegistry, tests on Anvil</td><td>Deployed address + ABI to backend by hour 9</td></tr>
+          <tr><td><b>Backend / AI</b></td><td>Indexer, rule engine, fork simulation, LLM call, relayer</td><td>Working <code class="mono">/verdict</code> API + on-chain writer by hour 14</td></tr>
+          <tr><td><b>Frontend</b></td><td>Dashboard, live risk feed, policy config UI, attack-trigger button</td><td>Wired to real contract + API by hour 16</td></tr>
+          <tr><td><b>Integrator / demo lead</b></td><td>Drainer script, end-to-end wiring from hour 9, pitch narrative, timing</td><td>Owns every cut-line call after checkpoint 1</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="muted">Fewer than four people: merge Contracts+Backend and Frontend+Integrator. More than four: split the AI scoring pipeline (rules/simulation vs. LLM integration) into its own role — it's the highest-risk-of-slipping piece.</p>
+  </section>
+
+  <section id="demo-script">
+    <p class="eyebrow">10 · Demo script</p>
+    <h2>Three minutes, live</h2>
+    <div class="script">
+      <div class="script-row"><div class="script-time">0:00–0:25</div><div><h4>Hook</h4><p>One line: wallet drainers cost users hundreds of millions a year, and the loss is always irreversible by the time anyone notices.</p></div></div>
+      <div class="script-row"><div class="script-time">0:25–1:00</div><div><h4>Baseline</h4><p>Show the dashboard: one protected Safe, its policy (limit / delay window / allowlist). Send a small, ordinary transfer — it executes instantly, verdict shown as low-risk.</p></div></div>
+      <div class="script-row"><div class="script-time">1:00–2:00</div><div><h4>The attack</h4><p>Fire the drainer script live: it gets the Safe to propose a <code>setApprovalForAll</code> to an unverified, minutes-old contract. Watch the dashboard catch it in real time — score, LLM explanation, and the Guard trip into delay/freeze before it can execute.</p></div></div>
+      <div class="script-row"><div class="script-time">2:00–2:30</div><div><h4>Owner controls</h4><p>Open the policy panel: adjust the daily limit, extend/shorten the delay window, hit the manual panic button.</p></div></div>
+      <div class="script-row"><div class="script-time">2:30–3:00</div><div><h4>Close</h4><p>What's next: natural-language policy setting, multi-signer DAO treasuries, cross-chain (XDC + Ethereum) rollout.</p></div></div>
+    </div>
+  </section>
+
+  <section id="stretch">
+    <p class="eyebrow">11 · Priority ladder</p>
+    <h2>What's core, what's a stretch</h2>
+    <ul class="plist">
+      <li><span class="plevel p0">P0 · must demo</span><div><b>Guard enforces limits, delay, and freeze on a live testnet Safe</b><span class="desc">If this doesn't work live, nothing else matters — protect this first.</span></div></li>
+      <li><span class="plevel p0">P0 · must demo</span><div><b>Rule-engine score catches the drainer script end-to-end</b><span class="desc">Deterministic and fast; doesn't depend on an external LLM call succeeding on stage.</span></div></li>
+      <li><span class="plevel p1">P1 · strong add</span><div><b>LLM explanation attached to every verdict</b><span class="desc">Turns "blocked" into "blocked, and here's why" — this is most of the AI story for judges.</span></div></li>
+      <li><span class="plevel p1">P1 · strong add</span><div><b>Live risk feed + policy config UI</b><span class="desc">Makes the product legible without narration.</span></div></li>
+      <li><span class="plevel p1">P1 · strong add</span><div><b>Blacklist lookup via GoPlus API</b><span class="desc">One real external signal beyond our own heuristics.</span></div></li>
+      <li><span class="plevel p1">P1 · strong add</span><div><b>Foundry test proving fail-closed on <code class="mono">UNSCORED</code></b><span class="desc">One deterministic test that a tx with no verdict yet always reverts, never executes — turns the core safety claim into checked code, not just a live-demo outcome.</span></div></li>
+      <li><span class="plevel p2">P2 · the 100x swing</span><div><b>Natural-language policy setting</b><span class="desc">"Only auto-approve sends under $500 to addresses I've paid before, delay everything else an hour" → Claude parses this straight into the Guard's config struct. Cheap to build (one structured LLM call), and it's the single most memorable thing judges will see.</span></div></li>
+      <li><span class="plevel p2">P2 · stretch</span><div><b>Multi-signer / DAO treasury view</b><span class="desc">Same Guard, framed for a team wallet instead of a single owner — broadens the pitch to "org," not just "person."</span></div></li>
+      <li><span class="plevel p2">P2 · stretch</span><div><b>XDC Apothem deployment alongside Sepolia</b><span class="desc">Same contracts, second chain — a concrete multi-chain story if there's time in the last two hours.</span></div></li>
+    </ul>
+  </section>
+
+  <section id="judging">
+    <p class="eyebrow">12 · Judging fit</p>
+    <h2>Why this scores well</h2>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Criterion</th><th>What we point to</th></tr></thead>
+        <tbody>
+          <tr><td>Innovation</td><td>Wallet-side, not protocol-side — the underserved half of this market, plus the natural-language policy angle.</td></tr>
+          <tr><td>Technical depth</td><td>Real on-chain enforcement via an audited primitive (Zodiac Guard), not a mocked-up blocker.</td></tr>
+          <tr><td>AI usage</td><td>The LLM does actual contextual reasoning over simulated state, not a wrapper around a single prompt.</td></tr>
+          <tr><td>Impact</td><td>Directly answers the brief's stated problem: irreversible loss, detected too late.</td></tr>
+          <tr><td>Demo quality</td><td>A live, unscripted attack caught on stage is the strongest possible proof — plan for it explicitly (see risks below).</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="risks">
+    <p class="eyebrow">13 · Risks</p>
+    <h2>What breaks a live demo, and the fix</h2>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Risk</th><th>Mitigation</th></tr></thead>
+        <tbody>
+          <tr><td>Zodiac Guard API unfamiliar, burns hours</td><td>Start from Zodiac's own reference Guard template; test against Anvil before ever touching testnet.</td></tr>
+          <tr><td>Verdict lands after execution (race condition)</td><td>Fail closed: any tx with no recorded verdict yet defaults to delay, never to allow.</td></tr>
+          <tr><td>LLM call times out or errors on stage</td><td>Rule-engine score always ships independently; LLM explanation is additive, never blocking.</td></tr>
+          <tr><td>Public testnet RPC flakiness during the live demo</td><td>Local Anvil fork as the primary demo environment; a recorded backup run as insurance.</td></tr>
+          <tr><td>Scope creep past checkpoint 2</td><td>Integrator has unilateral authority to cut anything below P0/P1 after hour 14 — no debate on stage-day.</td></tr>
+          <tr><td>Relayer key is the one component with real custody</td><td>Scope the relayer key to <code class="mono">submitVerdict()</code> only — it can never call a Safe execution function or move funds. Hold it in an env var for the demo, note KMS/HSM custody as a named follow-up, not a live gap.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="appendix">
+    <p class="eyebrow">14 · Appendix</p>
+    <h2>Skeletons to start from</h2>
+    <p class="cap">Guard hook</p>
+    <pre>function checkTransaction(
+    address to, uint256 value, bytes calldata data,
+    Enum.Operation operation, uint256 safeTxGas,
+    uint256 baseGas, uint256 gasPrice, address gasToken,
+    address payable refundReceiver, bytes calldata signatures,
+    address msgSender
+) external override {
+    bytes32 txHash = keccak256(abi.encode(to, value, data, operation));
+    Verdict memory v = riskRegistry.verdictOf(txHash);
+
+    if (v.status == Status.UNSCORED)      revert("tripwire: awaiting risk score");
+    if (v.status == Status.FROZEN)        revert("tripwire: guard is frozen");
+    if (v.status == Status.HIGH_RISK)     revert("tripwire: blocked, see dashboard");
+    if (v.status == Status.DELAYED && block.timestamp < v.releaseAt)
+        revert("tripwire: in cooling-off window");
+
+    _enforceVelocityLimit(value);
+}</pre>
+    <p class="cap">LLM verdict schema</p>
+    <pre>{
+  "txHash": "0x9f2c...",
+  "score": 87,
+  "label": "high_risk",
+  "reasons": [
+    "setApprovalForAll to a contract deployed 41 minutes ago",
+    "target contract is unverified on the block explorer",
+    "3 other wallets interacted with this contract in the last hour, all followed by a transferFrom drain"
+  ],
+  "recommended_action": "freeze"
+}</pre>
+    <p class="cap">RiskRegistry (interface)</p>
+    <pre>interface IRiskRegistry {
+    enum Status { UNSCORED, LOW_RISK, DELAYED, HIGH_RISK, FROZEN }
+    struct Verdict { Status status; uint8 score; uint256 releaseAt; }
+
+    function submitVerdict(bytes32 txHash, Verdict calldata v) external; // relayer-only
+    function verdictOf(bytes32 txHash) external view returns (Verdict memory);
+}</pre>
+  </section>
+
+  <footer>
+    <p>Tripwire — Smart Contract Financial Guardian · prepared as a build guide for a 20-hour hackathon window.</p>
+  </footer>
+</div>
+</body>
+</html>

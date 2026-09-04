@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tripwire — Market Review</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,500&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --paper:#F4F5F1; --ink:#16201D; --muted:#5B6560; --line:#D8D9D2;
+    --accent:#1B6B63; --accent-soft:#E4EFEC;
+    --accent2:#B5481C; --accent2-soft:#F3E3D6;
+    --card:#FFFFFF;
+    --font-display:'Newsreader',Georgia,'Times New Roman',serif;
+    --font-body:'IBM Plex Sans',-apple-system,'Segoe UI',sans-serif;
+    --font-mono:'IBM Plex Mono',SFMono-Regular,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#10151A; --ink:#E7EAE4; --muted:#8B968E; --line:#263029;
+      --accent:#4FBDB0; --accent-soft:#16302C;
+      --accent2:#E0813F; --accent2-soft:#3A2417;
+      --card:#161C21;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#10151A; --ink:#E7EAE4; --muted:#8B968E; --line:#263029;
+    --accent:#4FBDB0; --accent-soft:#16302C;
+    --accent2:#E0813F; --accent2-soft:#3A2417;
+    --card:#161C21;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:var(--font-body); line-height:1.6; font-size:16px;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{ font-family:var(--font-display); font-weight:600; text-wrap:balance; color:var(--ink); }
+  a{ color:var(--accent); }
+  code, .mono{ font-family:var(--font-mono); }
+  ::selection{ background:var(--accent-soft); }
+
+  .topbar{
+    position:sticky; top:0; z-index:20; background:color-mix(in srgb, var(--paper) 88%, transparent);
+    backdrop-filter:blur(8px); border-bottom:1px solid var(--line);
+  }
+  .topbar-inner{
+    max-width:1080px; margin:0 auto; padding:12px 24px;
+    display:flex; align-items:center; gap:18px; overflow-x:auto;
+  }
+  .topbar-brand{ font-family:var(--font-display); font-weight:600; font-size:17px; white-space:nowrap; }
+  .topbar-brand span{ color:var(--accent); }
+  .navlinks{ display:flex; gap:4px; flex-wrap:nowrap; }
+  .navlinks a{
+    font-size:12.5px; text-decoration:none; color:var(--muted); white-space:nowrap;
+    padding:6px 10px; border-radius:999px; border:1px solid transparent;
+  }
+  .navlinks a:hover{ border-color:var(--line); color:var(--ink); }
+  .back-link{ font-size:12.5px; color:var(--muted); text-decoration:none; margin-left:auto; white-space:nowrap; }
+  .back-link:hover{ color:var(--ink); }
+
+  .wrap{ max-width:760px; margin:0 auto; padding:0 24px; }
+  .wide{ max-width:1080px; margin:0 auto; padding:0 24px; }
+  section{ padding:52px 0; border-bottom:1px solid var(--line); }
+  section:last-of-type{ border-bottom:none; }
+
+  .eyebrow{
+    font-family:var(--font-mono); font-size:11.5px; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--accent); font-weight:600; margin:0 0 10px;
+  }
+  h2{ font-size:26px; margin:0 0 6px; }
+  h3{ font-size:18px; margin:24px 0 8px; }
+  p{ margin:0 0 14px; }
+  .lede{ font-size:17.5px; color:var(--muted); }
+  .muted{ color:var(--muted); }
+
+  .cover{ padding:60px 0 44px; border-bottom:1px solid var(--line); }
+  .cover .kicker{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--accent2); font-weight:600; margin-bottom:18px;
+  }
+  .cover h1{ font-size:48px; line-height:1.04; margin:0 0 6px; }
+  .cover .tag{ font-family:var(--font-display); font-style:italic; font-size:20px; color:var(--muted); margin:0 0 26px; }
+  .brief{
+    border-left:3px solid var(--accent2); background:var(--accent2-soft);
+    padding:16px 20px; border-radius:0 8px 8px 0; font-size:14.5px; color:var(--ink);
+  }
+  .brief b{ font-family:var(--font-mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase; display:block; margin-bottom:6px; color:var(--accent2); }
+
+  table{ width:100%; border-collapse:collapse; font-size:13.8px; }
+  thead th{
+    text-align:left; font-family:var(--font-mono); font-size:10.5px; letter-spacing:.07em; text-transform:uppercase;
+    color:var(--muted); font-weight:600; padding:8px 12px; border-bottom:1px solid var(--line);
+  }
+  tbody td{ padding:12px; border-bottom:1px solid var(--line); vertical-align:top; }
+  tbody tr:last-child td{ border-bottom:none; }
+  .table-scroll{ overflow-x:auto; border:1px solid var(--line); border-radius:10px; }
+  .table-scroll table{ min-width:640px; }
+
+  .stat-row{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin:22px 0 8px; }
+  .stat{ background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 16px 14px; }
+  .stat .num{ font-family:var(--font-display); font-size:26px; font-weight:600; color:var(--accent); line-height:1.1; }
+  .stat .lbl{ font-size:11.5px; color:var(--muted); margin-top:4px; }
+
+  .company-card{
+    border:1px solid var(--line); border-radius:12px; padding:18px 20px; background:var(--card); margin-bottom:14px;
+  }
+  .company-card .head{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .company-card .name{ font-family:var(--font-display); font-size:19px; font-weight:600; }
+  .company-card .stage{ font-family:var(--font-mono); font-size:11px; color:var(--muted); white-space:nowrap; }
+  .company-card .body{ font-size:14px; color:var(--ink); margin-top:8px; }
+  .company-card .gap{ font-size:13.5px; color:var(--muted); margin-top:10px; padding-top:10px; border-top:1px solid var(--line); }
+  .company-card .gap b{ color:var(--accent2); font-weight:600; }
+
+  .verdict{
+    border:1px solid var(--accent); background:var(--accent-soft); border-radius:12px;
+    padding:22px 24px; font-size:15px;
+  }
+  .verdict .label{ font-family:var(--font-mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); font-weight:600; margin-bottom:8px; display:block; }
+
+  .plist{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px; }
+  .plist li{ display:flex; gap:12px; align-items:flex-start; border:1px solid var(--line); border-radius:10px; padding:12px 14px; background:var(--card); }
+  .ptag{ font-family:var(--font-mono); font-size:11px; font-weight:600; padding:2px 8px; border-radius:6px; white-space:nowrap; margin-top:2px; }
+  .t-open{ background:var(--accent-soft); color:var(--accent); }
+  .t-crowded{ background:var(--accent2-soft); color:var(--accent2); }
+  .plist b{ display:block; font-size:14px; }
+  .plist span.desc{ font-size:13px; color:var(--muted); }
+
+  footer{ padding:32px 0 56px; }
+  footer p{ font-size:12.5px; color:var(--muted); }
+
+  @media (max-width:680px){
+    .cover h1{ font-size:34px; }
+    .stat-row{ grid-template-columns:1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="topbar-brand"><span>◆</span> Tripwire</div>
+    <nav class="navlinks">
+      <a href="#validation">Validation</a>
+      <a href="#landscape">Landscape</a>
+      <a href="#gaps">Gaps</a>
+      <a href="#positioning">Positioning</a>
+      <a href="#verdict">Verdict</a>
+    </nav>
+    <a class="back-link" href="tripwire-proposal.html">← Back to proposal</a>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="cover">
+    <div class="kicker">Companion doc · Market &amp; competitive review</div>
+    <h1>Is anyone already solving this?</h1>
+    <p class="tag">Yes — and knowing exactly who changes how Tripwire should be pitched.</p>
+    <div class="brief">
+      <b>Why this doc exists</b>
+      Tripwire's own proposal names Forta, BlockSec, and Harpie as the landscape. That list is incomplete and understates how far incumbents have moved. This review checks the real 2025–2026 competitive picture — Forta Firewall, Blockaid, Hypernative, and Safe's own native Shield — and reframes where Tripwire's actual, defensible edge is.
+    </div>
+  </div>
+
+  <section id="validation">
+    <p class="eyebrow">01 · Is the problem real</p>
+    <h2>The demand isn't hypothetical</h2>
+    <p class="lede">Wallet-drainer losses fell sharply from their 2024 peak, but the underlying attack pattern — tricking a signer into an approval, not stealing a key — is still today's dominant threat, and 2026's worst incidents are passing every formal security check at the moment of execution.</p>
+    <div class="stat-row">
+      <div class="stat"><div class="num">$494M</div><div class="lbl">Wallet-drainer losses, 2024 — 332K+ wallets affected</div></div>
+      <div class="stat"><div class="num">$83.85M</div><div class="lbl">2025 losses — down 83%, but still 106K+ wallets hit</div></div>
+      <div class="stat"><div class="num">$645M+</div><div class="lbl">Lost across 60+ incidents in April 2026 alone, at established projects</div></div>
+      <div class="stat"><div class="num">63M+</div><div class="lbl">Safe accounts deployed by Q1 2026, securing $35B+ across 25+ chains</div></div>
+    </div>
+    <p class="muted">Sources: Scam Sniffer annual drainer datasets; Hypernative April 2026 incident review; Safe/Spark treasury-tooling market data.</p>
+  </section>
+
+  <section id="landscape">
+    <p class="eyebrow">02 · Who else is building this</p>
+    <h2>The real competitive set</h2>
+    <p>Four organizations matter here. Two protect protocols. One protects wallets at the platform level, and it's the platform Tripwire is built on.</p>
+
+    <div class="company-card">
+      <div class="head"><span class="name">Forta Firewall</span><span class="stage mono">a16z / Coinbase Ventures · market standard, 2025</span></div>
+      <div class="body">Screened 700M+ transactions in 2025 alone, with days exceeding 8M. Sub-10ms latency, &gt;99% exploit-detection recall, RPC-level pre-block screening. Adopted at the chain level — Kraken's Ink, Celo, Plume — and by Compound, Lido, MakerDAO.</div>
+      <div class="gap"><b>Where it doesn't compete with Tripwire:</b> protocol/chain-side by design — the target contract or chain has to integrate it. A victim's own wallet is unprotected against a malicious contract that never opted in.</div>
+    </div>
+
+    <div class="company-card">
+      <div class="head"><span class="name">Blockaid</span><span class="stage mono">Series B, $50M · Tel Aviv, founded 2022</span></div>
+      <div class="body">Powers the transaction simulation and security alerts built into several major wallets already — most people who've seen a "this transaction looks risky" warning in a mainstream wallet have likely seen Blockaid's engine at work.</div>
+      <div class="gap"><b>Where it doesn't compete with Tripwire:</b> alerts and simulates; doesn't itself hold enforcement authority over the wallet's execution path — that decision stays with the wallet vendor integrating it.</div>
+    </div>
+
+    <div class="company-card">
+      <div class="head"><span class="name">Hypernative</span><span class="stage mono">Series B, $40M · powers Safe Shield's enterprise tier</span></div>
+      <div class="body">300+ dApps, chains, wallets, and financial institutions rely on it for real-time threat detection and automated incident response. This is the engine behind Safe Shield's paid enforcement layer — automatic blocking, custom policy rules, Transaction Guards — shipping today, on the exact wallet standard Tripwire targets.</div>
+      <div class="gap"><b>Where it doesn't compete with Tripwire:</b> gated behind Safe's enterprise/paid tier, aimed at organizations needing enforcement "at scale" — not self-hostable, not aimed at individuals or small DAOs configuring their own policy.</div>
+    </div>
+
+    <div class="company-card">
+      <div class="head"><span class="name">Harpie</span><span class="stage mono">Shut down, 2025</span></div>
+      <div class="body">Billed as the first on-chain firewall protecting individual wallets from hacks and theft — the closest historical analog to Tripwire's original "protect the person, not the protocol" framing.</div>
+      <div class="gap"><b>Why it matters anyway:</b> it shut down on unit economics, not because wallet-side protection doesn't work technically. Proof of demand, and a warning about the business model, not the architecture.</div>
+    </div>
+  </section>
+
+  <section id="gaps">
+    <p class="eyebrow">03 · What's crowded, what's open</p>
+    <h2>Where Tripwire can still stand</h2>
+    <ul class="plist">
+      <li><span class="ptag t-crowded">Crowded</span><div><b>"We detect and block malicious transactions"</b><span class="desc">Forta, Blockaid, and Hypernative all do this, at production scale, with venture-scale funding behind each.</span></div></li>
+      <li><span class="ptag t-crowded">Crowded</span><div><b>"We add enforcement to Safe via a Guard module"</b><span class="desc">Safe Shield already ships exactly this, natively, with Hypernative as the enforcement partner — as of November 2025.</span></div></li>
+      <li><span class="ptag t-open">Open</span><div><b>Self-hostable, individually configurable enforcement</b><span class="desc">Hypernative's Safe integration is aimed at organizations needing enforcement "at scale." Nothing found targets a single power-user or a small DAO who wants to run their own policy layer without an enterprise contract.</span></div></li>
+      <li><span class="ptag t-open">Open</span><div><b>Natural-language policy configuration</b><span class="desc">"Only auto-approve sends under $500 to addresses I've paid before, delay everything else an hour" parsed straight into a Guard's config struct. Not found in any competitor's public feature set.</span></div></li>
+      <li><span class="ptag t-open">Open</span><div><b>Transparent, auditable reasoning trail per verdict</b><span class="desc">Incumbents largely treat scoring as a black box behind an API. An open <code class="mono">RiskRegistry</code> with a plain-English reason attached to every verdict is a legible, inspectable alternative — a real trust argument for a skeptical DAO signer group.</span></div></li>
+    </ul>
+  </section>
+
+  <section id="positioning">
+    <p class="eyebrow">04 · Reframing the pitch</p>
+    <h2>From "we solve wallet drainers" to something defensible</h2>
+    <p>The original pitch — <i>"protect the wallet, not the protocol"</i> — is no longer differentiated on its own; Safe Shield does exactly that today. The version worth pitching is narrower and truer:</p>
+    <p class="lede">Tripwire is an open, self-hostable enforcement layer for the wallets and DAOs that enterprise security platforms don't prioritize — configured in plain language, not a policy console.</p>
+    <p>Concretely, that means naming Forta, Blockaid, and Hypernative directly in the pitch rather than omitting them, and making the claim: <i>what Hypernative validated at the enterprise tier, we're proving works open and self-configurable for everyone else.</i> That's a smaller claim than the original, but it's one nobody in this review is already making — which makes it far more credible to a judge who knows this space.</p>
+  </section>
+
+  <section id="verdict">
+    <p class="eyebrow">05 · Bottom line</p>
+    <h2>Verdict</h2>
+    <div class="verdict">
+      <span class="label">Net assessment</span>
+      The problem is real and current — losses are still material and 2026's worst incidents are bypassing formal checks entirely. But the core "detect and enforce" loop is no longer a gap: Forta owns protocol-side screening, Blockaid is inside major wallets already, and Hypernative already powers native enforcement on Safe itself. Tripwire's technical design is sound and its fail-closed discipline is genuinely good — but its differentiation has to move from <i>detection and enforcement</i> (taken) to <i>open, configurable, natural-language policy for the segment incumbents don't serve</i> (still open). That's a smaller, more honest claim — and a stronger one to defend in front of a judge who's done this same research.
+    </div>
+  </section>
+
+  <footer>
+    <p>Tripwire — Market &amp; Competitive Review · companion to the original proposal · prepared 2026-09-04.</p>
+  </footer>
+</div>
+</body>
+</html>
