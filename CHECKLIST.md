@@ -44,9 +44,20 @@ blocked in the dashboard — not just in a test log.
       `llmReasoning.ts` reads both. A new contributor has no way to know.
 - [x] ~~Conflicting chain defaults~~ — `CHAIN_ID` now defaults to `51` (Apothem),
       matching `VITE_CHAIN`. Flagged as a Phase 1 blocker below.
-- [ ] **Foundry is not in CI.** `.github/workflows/ci.yml` runs `yarn`, `yarn build`,
-      `yarn coverage` only. `forge test` never runs — so the fail-closed assertion,
-      your single most important safety claim, is not gated on any push. Add the step.
+- [ ] **Foundry is not in CI — parked, needs `forge` installed first.**
+      `.github/workflows/ci.yml` runs `yarn`, `yarn build`, `yarn coverage` only, so
+      `forge test` never runs and the fail-closed assertion is not gated on any push.
+      This is *not* a small CI diff, for three reasons found on inspection:
+      1. `foundry.toml` sets `libs = ["lib"]` but there is **no root `lib/`** — all four
+         submodules are at `contracts/lib/`, the layout that file's own header warns
+         breaks `npx hardhat compile`. Config and submodule paths disagree.
+      2. The submodules are uninitialised in a fresh clone (`git submodule status`
+         shows all four prefixed `-`).
+      3. CI would additionally need `foundry-rs/foundry-toolchain@v1` and
+         `submodules: recursive` on checkout.
+      Correct order: install Foundry locally, `git submodule update --init --recursive`,
+      get `forge test` green, *then* encode it in CI. Adding the step blind risks a
+      red `main`.
 - [x] ~~Legacy model pinned~~ — `DEFAULT_MODEL` is now `claude-haiku-4-5-20251001`,
       the pinned snapshot per the model docs (`claude-haiku-4-5` is an alias that
       resolves to it). String confirmed against the docs; **the live call has not been
@@ -72,9 +83,12 @@ Flagged by the System Reference, not independently confirmed:
       its own test) and deleted along with its 18 tests. It was an earlier, in-memory-only
       iteration with no sink, no persistence and no replay; `auditLedgerSink.ts`
       supersedes it entirely. Backend suite is now **442**, down from 460.
-- [ ] Possible drift between `frontend/src/policyParser.ts` and the backend compiler.
-      Two parsers for one policy language is a correctness risk — add a shared test
-      fixture both must satisfy, or delete one.
+- [x] ~~Possible drift between the frontend parser and the backend compiler~~ — it was
+      not drift: two different grammars with different data models, and the frontend's
+      read of the project's own example policy was wrong (it dropped the delay clause,
+      re-read the freeze threshold as a daily limit, and emitted exponential-notation
+      strings that `BigInt()` rejects). `policyParser.ts` is deleted; the dashboard now
+      calls `POST /policy/compile` on the orchestrator.
 
 ---
 

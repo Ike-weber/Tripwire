@@ -3,6 +3,9 @@ import { pathToFileURL } from "node:url"
 import { keccak256, toHex } from "viem"
 
 import { AuditLedger, createJsonlSink, type AuditEventType } from "./auditLedgerSink.js"
+import { compilePolicy } from "./policyCompiler.js"
+import { explainPolicy, resolvePolicy } from "./policyMapper.js"
+import { validatePolicy } from "./policyValidator.js"
 import {
   createMemoryStateStore,
   RiskOrchestrator,
@@ -19,6 +22,7 @@ import {
  * state plus a single intake endpoint:
  *
  *   POST /tx/propose        { to, value, data, txHash? } -> 202 { txHash, status, duplicate }
+ *   POST /policy/compile    { text, usdPerNative?, nativeDecimals? } -> 200 compiled policy
  *   GET  /tx                ?status=&limit= -> newest-first processing states
  *   GET  /tx/:txHash/status -> full processing state incl. canonical verdict
  *   GET  /health
@@ -84,6 +88,50 @@ export function createOrchestratorHttpServer(orchestrator: RiskOrchestrator): Se
         }
         const result = await orchestrator.propose(tx)
         sendJson(res, 202, result)
+        return
+      }
+
+      // The single source of truth for turning plain English into Guard
+      // config. The dashboard used to run its own parser, which produced a
+      // different (and wrong) reading of the same sentence; there is now one
+      // grammar, one validator, and one set of failures.
+      if (req.method === "POST" && url.pathname === "/policy/compile") {
+        let body: unknown
+        try {
+          body = JSON.parse(await readBody(req))
+        } catch {
+          sendJson(res, 400, { error: "invalid JSON body" })
+          return
+        }
+        const { text, usdPerNative, nativeDecimals } = body as {
+          text?: string
+          usdPerNative?: string
+          nativeDecimals?: number
+        }
+        if (typeof text !== "string" || text.trim().length === 0) {
+          sendJson(res, 400, { error: "text is required" })
+          return
+        }
+        try {
+          const policy = compilePolicy(text)
+          const issues = validatePolicy(policy)
+          if (issues.length > 0) {
+            sendJson(res, 400, { error: "policy is invalid", issues })
+            return
+          }
+          const resolved = resolvePolicy(policy, { usdPerNative, nativeDecimals })
+          sendJson(res, 200, {
+            source: policy.source,
+            rules: policy.rules,
+            explanation: explainPolicy(policy),
+            guardConfig: resolved.guardConfig,
+          })
+        } catch (err) {
+          // Compile and resolve failures are the owner's to see verbatim -
+          // the whole point of this grammar is that it never silently drops a
+          // clause it could not map.
+          sendJson(res, 400, { error: err instanceof Error ? err.message : String(err) })
+        }
         return
       }
 
@@ -232,6 +280,7 @@ async function startFromEnv(): Promise<void> {
     console.log("  GET  /tx?status=&limit=")
     console.log("  GET  /tx/:txHash/status")
     console.log("  POST /tx/propose   { to, value, data }")
+    console.log("  POST /policy/compile { text, usdPerNative? }")
     console.log("  relayer: dry-run (logs verdicts, writes nothing on-chain)")
     console.log(`  audit:   ${auditLedger ? `jsonl (${auditPath})` : "disabled (AUDIT_LOG_PATH=:memory:)"}`)
   })
