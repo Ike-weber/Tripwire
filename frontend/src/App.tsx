@@ -1,4 +1,8 @@
 import "./App.css"
+// Imported separately: App.css currently has unbalanced braces, and a CSS
+// parser swallows everything after the first unclosed rule.
+import "./AppSections.css"
+import type { ReactNode } from "react"
 import { BatchRiskCard } from "./components/BatchRiskCard.js"
 import { AuthorizationCard } from "./components/AuthorizationCard.js"
 import { AuditCard } from "./components/AuditCard.js"
@@ -16,6 +20,33 @@ import { SimulationCard } from "./components/SimulationCard.js"
 import { VerificationStatusCard } from "./components/VerificationStatusCard.js"
 import { activeChain } from "./config.js"
 
+/**
+ * A labelled group of cards. The `source` line is the important part: a reader
+ * should never have to guess whether a number in front of them came off the
+ * chain, out of the backend, or out of a sample fixture.
+ */
+function Section({
+  title,
+  source,
+  tone = "live",
+  children,
+}: {
+  title: string
+  source: string
+  tone?: "live" | "sample"
+  children: ReactNode
+}) {
+  return (
+    <section className="section">
+      <div className="section-head">
+        <h2 className="section-title">{title}</h2>
+        <span className={`section-source section-source-${tone}`}>{source}</span>
+      </div>
+      <div className="grid">{children}</div>
+    </section>
+  )
+}
+
 export function App() {
   return (
     <div className="app">
@@ -26,21 +57,60 @@ export function App() {
         </div>
         <ConnectWallet />
       </header>
-      <main className="grid">
-        <VerificationStatusCard />
+
+      <div className="purpose">
+        <h1 className="purpose-title">
+          Every transaction from this wallet, scored before it can execute.
+        </h1>
+        <p className="purpose-body">
+          Tripwire watches this Safe while a transaction is still pending, scores
+          it, and writes a verdict the Guard reads on-chain. Below: what is
+          currently protected, what has been decided, and why.
+        </p>
+      </div>
+
+      <Section
+        title="Live monitoring"
+        source="Live — this wallet and the risk engine"
+      >
+        <RiskFeedCard />
         <SafeCard />
         <GuardCard />
+        <VerificationStatusCard />
+      </Section>
+
+      <Section
+        title="Decision trail"
+        source="Live — recorded verdicts and simulations"
+      >
         <AuditCard />
-        <RiskFeedCard />
-        <RiskDecisionCard />
+        <SimulationCard />
+      </Section>
+
+      <Section title="Policy" source="Live — the Guard's on-chain configuration">
         <PolicyPanel />
-        <SimulateAttackCard />
+      </Section>
+
+      <Section
+        title="Investigation tools"
+        source="Sample data — not reading live transactions yet"
+        tone="sample"
+      >
+        <RiskDecisionCard />
         <BatchRiskCard />
         <SimulationIntegrityCard />
         <AuthorizationCard />
         <NonceConflictCard />
-        <SimulationCard />
-      </main>
+      </Section>
+
+      <Section
+        title="Demo controls"
+        source="Sends a real transaction into the pipeline"
+        tone="sample"
+      >
+        <SimulateAttackCard />
+      </Section>
+
       <PolicyChat />
     </div>
   )

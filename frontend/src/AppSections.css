@@ -1,0 +1,70 @@
+/* ---------------------------------------------------------------------------
+   Purpose statement + labelled sections
+
+   The dashboard is a wall of cards; without these a reader cannot tell what it
+   is for, or which numbers are real. The `section-source` line answers the
+   second question for every card beneath it.
+   --------------------------------------------------------------------------- */
+.purpose {
+  padding: 28px 0 8px;
+  max-width: 62ch;
+  /* #root sets text-align:center globally; this column reads as prose. */
+  text-align: left;
+}
+
+/* index.css sets h1 { font-size:56px; margin:32px 0 } — override both. */
+.purpose h1.purpose-title {
+  margin: 0 0 10px;
+  font-size: 26px;
+  line-height: 1.25;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+}
+
+.purpose-body {
+  margin: 0;
+  color: var(--muted, #8b968e);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.section {
+  margin-top: 34px;
+}
+
+.section-head {
+  display: flex;
+  text-align: left;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.section-head h2.section-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.section-source {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+/* Live data carries no warning; sample data does, and reads as a caution. */
+.section-source-live {
+  color: #4fbdb0;
+}
+
+.section-source-sample {
+  color: #e0813f;
+}
