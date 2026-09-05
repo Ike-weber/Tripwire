@@ -14,7 +14,8 @@
     "deploy:verify": "hardhat run scripts/verifyDeployment.ts",
     "test": "hardhat test",
     "dev:healthcheck": "wait-on -t 60000 -i 1000 http-get://localhost:3001/health http-get://localhost:3002/audit/health http-get://localhost:3003/health http-get://localhost:5173 && echo [dev:all] all four services are up",
-    "dev:all": "concurrently --kill-others-on-fail --names orch,audit,sim,web,check -c blue,magenta,yellow,green,gray \"npm --prefix backend run orchestrator\" \"npm --prefix backend run audit\" \"npm --prefix backend run sim\" \"npm --prefix frontend run dev\" \"npm run dev:healthcheck\""
+    "dev:all": "concurrently --kill-others-on-fail --names orch,audit,sim,web,check -c blue,magenta,yellow,green,gray \"npm --prefix backend run orchestrator\" \"npm --prefix backend run audit\" \"npm --prefix backend run sim\" \"npm --prefix frontend run dev\" \"npm run dev:healthcheck\"",
+    "demo:reset": "node scripts/demoReset.mjs"
   },
   "keywords": [
     "tripwire",

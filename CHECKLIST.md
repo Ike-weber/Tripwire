@@ -22,12 +22,13 @@ Phases 0–2 are the hackathon path. Phases 3–7 turn it into a product.
 - [ ] `forge test` — expect **12 passing**
 - [ ] `cd backend && npm test` — expect **442 passing**
 - [ ] Start a local chain: `anvil`
-- [ ] `LOCAL_E2E=true npx hardhat node` in its own terminal — `LOCAL_E2E` makes the
-      node mine failed transactions like a real chain instead of throwing, which is
-      what lets you *see* the Guard revert a drainer
-- [ ] `npx hardhat run scripts/localDeploy.ts --network localhost` — deploys a real
-      Safe + Guard + RiskRegistry + drainer contracts, and writes the addresses into
-      `frontend/.env` for you (no copy-paste step)
+- [ ] `npm run demo:reset` — one command: clears the ports, starts the chain with
+      `LOCAL_E2E=true` (so it mines failed transactions like a real chain, which is
+      what lets you *see* the Guard revert a drainer), deploys Safe + Guard +
+      RiskRegistry + drainer contracts, writes `frontend/.env`, then starts `dev:all`.
+      Ctrl+C takes the chain down with it, so the next run starts clean.
+      Cold start measured at **12–14s**. Contract addresses are **deterministic** —
+      identical on every reset — so you can note them once.
 - [ ] (Only if not deploying locally) copy `frontend/.env.example` → `frontend/.env`
 - [ ] Start everything at once: `npm run dev:all` — orchestrator `:3001`, audit `:3002`,
       sim `:3003`, dashboard `:5173`. It prints `all four services are up`, and fails
