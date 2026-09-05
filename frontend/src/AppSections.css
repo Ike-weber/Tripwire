@@ -4,6 +4,8 @@
    The dashboard is a wall of cards; without these a reader cannot tell what it
    is for, or which numbers are real. The `section-source` line answers the
    second question for every card beneath it.
+
+   Kept separate from App.css so component styles and layout styles stay apart.
    --------------------------------------------------------------------------- */
 .purpose {
   padding: 28px 0 8px;

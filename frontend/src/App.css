@@ -514,28 +514,24 @@
   border-color: rgba(234, 88, 12, 0.3);
 }
 
-.batch-description {
 /* Issue #92: Simulation Result Integrity */
 
 .sim-integrity-card {
   border-color: rgba(99, 102, 241, 0.3);
 }
 
-.sim-integrity-description {
 /* Issue #96: Execution Authorization Drift Detection */
 
 .auth-card {
   border-color: rgba(34, 197, 94, 0.3);
 }
 
-.auth-description {
 /* Issue #99: Attack Pattern Detection */
 
 .pattern-card {
   border-color: rgba(234, 88, 12, 0.3);
 }
 
-.pattern-description {
 /* Issue #44: simulation impact card */
 
 .sim-entry {
@@ -577,6 +573,10 @@
   border-color: rgba(239, 68, 68, 0.3);
 }
 
+.batch-description,
+.sim-integrity-description,
+.auth-description,
+.pattern-description,
 .rdc-description {
   font-size: 13px;
   color: var(--text);
@@ -584,30 +584,31 @@
   margin: 0 0 14px;
 }
 
-.batch-controls {
-.sim-integrity-controls {
+.batch-controls,
+.sim-integrity-controls,
 .auth-controls {
   display: flex;
   gap: 8px;
   margin-bottom: 14px;
 }
 
-.sim-integrity-controls button {
-.auth-controls button {
-.pattern-controls {
-.state-controls {
+.sim-integrity-controls button,
+.auth-controls button,
+.pattern-controls,
+.state-controls,
 .rdc-controls {
   display: flex;
   gap: 8px;
   margin-bottom: 12px;
 }
 
-.batch-controls button {
+.batch-controls button,
 .pattern-controls button {
   font-family: var(--sans);
   font-size: 13px;
   padding: 6px 14px;
-.state-controls button {
+}
+.state-controls button,
 .rdc-controls button {
   font-family: var(--sans);
   font-size: 12px;
@@ -623,12 +624,12 @@
   border-color: var(--accent-border);
 }
 
-.batch-demo-active {
+.batch-demo-active,
 .sim-integrity-controls button:hover {
   border-color: var(--accent-border);
 }
 
-.sim-integrity-demo-active {
+.sim-integrity-demo-active,
 .auth-controls button:hover {
   border-color: var(--accent-border);
 }
@@ -639,14 +640,14 @@
   color: #16a34a;
 }
 
-.sim-integrity-demo-drifted {
+.sim-integrity-demo-drifted,
 .auth-demo-drifted {
   background: rgba(220, 38, 38, 0.1);
   border-color: rgba(220, 38, 38, 0.4) !important;
   color: #dc2626;
 }
 
-.sim-integrity-status {
+.sim-integrity-status,
 .auth-status {
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -658,7 +659,7 @@
   margin-bottom: 6px;
 }
 
-.sim-integrity-status-badge {
+.sim-integrity-status-badge,
 .auth-status-header {
   margin-bottom: 6px;
 }
@@ -674,7 +675,7 @@
   letter-spacing: 0.04em;
 }
 
-.sim-integrity-explanation {
+.sim-integrity-explanation,
 .auth-summary {
   font-size: 13px;
   color: var(--text);
@@ -835,6 +836,7 @@
 
 .auth-authorize-btn:hover {
   background: rgba(34, 197, 94, 0.2);
+}
 .pattern-controls button:hover {
   border-color: var(--accent-border);
 }
@@ -845,9 +847,9 @@
   color: #ea580c;
 }
 
-.batch-hint {
-.pattern-hint {
-.state-controls button:hover {
+.batch-hint,
+.pattern-hint,
+.state-controls button:hover,
 .rdc-controls button:hover {
   border-color: var(--accent-border);
 }
@@ -865,7 +867,7 @@
 }
 
 /* Batch header */
-.batch-header {
+.batch-header,
 .pattern-summary {
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -905,6 +907,7 @@
   font-size: 12px;
   font-weight: 700;
   padding: 3px 10px;
+}
 .pattern-summary-header {
   margin-bottom: 8px;
 }
@@ -1052,7 +1055,7 @@
   width: 80px;
 }
 
-.batch-score-text {
+.batch-score-text,
 .pattern-summary-stats {
   display: flex;
   gap: 16px;
@@ -1113,8 +1116,10 @@
 .pattern-expand-btn {
   font-family: var(--sans);
   font-size: 12px;
+}
 /* Status header */
 .state-status {
+}
 /* Sections */
 .rdc-section {
   border: 1px solid var(--border);
@@ -1375,7 +1380,7 @@
   line-height: 1.5;
 }
 
-.batch-empty {
+.batch-empty,
 .rdc-signal-toggle {
   font-size: 12px;
   color: var(--muted);
@@ -1785,8 +1790,8 @@
   word-break: break-all;
 }
 
-.pattern-empty {
-.state-rejection-buttons button:hover {
+.pattern-empty,
+.state-rejection-buttons button:hover,
 .verify-refresh:hover:not(:disabled) {
   border-color: var(--accent-border);
 }
@@ -1968,6 +1973,7 @@
 
 .sim-integrity-simulate-btn:hover {
   background: rgba(99, 102, 241, 0.2);
+}
 .verify-contracts {
   display: flex;
   flex-direction: column;
@@ -1997,9 +2003,10 @@
   opacity: 0.7;
 }
 
-.pattern-empty p {
+.pattern-empty p,
 .state-empty p {
   margin: 0;
+}
 .verify-label {
   display: flex;
   align-items: center;

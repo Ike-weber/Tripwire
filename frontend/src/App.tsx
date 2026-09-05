@@ -1,6 +1,5 @@
 import "./App.css"
-// Imported separately: App.css currently has unbalanced braces, and a CSS
-// parser swallows everything after the first unclosed rule.
+// Section and purpose styles, kept apart from the component styles in App.css.
 import "./AppSections.css"
 import type { ReactNode } from "react"
 import { BatchRiskCard } from "./components/BatchRiskCard.js"
