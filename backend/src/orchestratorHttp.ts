@@ -1,8 +1,13 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http"
+import { readFileSync } from "node:fs"
 import { pathToFileURL } from "node:url"
+
+import { defineChain } from "viem"
 import { keccak256, toHex } from "viem"
 
 import { AuditLedger, createJsonlSink, type AuditEventType } from "./auditLedgerSink.js"
+import { VerdictRelayer } from "./relayer.js"
+import { createRiskRegistryClient } from "./riskRegistryClient.js"
 import { compilePolicy } from "./policyCompiler.js"
 import { explainPolicy, resolvePolicy } from "./policyMapper.js"
 import { validatePolicy } from "./policyValidator.js"
@@ -183,12 +188,91 @@ function readBody(req: IncomingMessage): Promise<string> {
 // Entrypoint - `npm run orchestrator`
 // ---------------------------------------------------------------------------
 
+interface RelayerConfig {
+  rpcUrl: string
+  chainId: number
+  riskRegistryAddress: `0x${string}`
+  relayerPrivateKey: `0x${string}`
+  source: string
+}
+
 /**
- * Scoring runs and verdicts are served over HTTP, but nothing is written
- * on-chain: no RiskRegistry is deployed yet, and the relayer is the one
- * component holding a real key. Swap this for a `VerdictRelayer` backed by
- * `createRiskRegistryClient` once deployment lands (see CHECKLIST Phase 1).
+ * Relayer configuration, from the environment first so a real deployment can
+ * override, then from local-deployment.json so `demo:reset` needs no setup.
+ * Returns undefined when neither is available - the caller degrades to dry-run
+ * rather than refusing to start.
  */
+function resolveRelayerConfig(): RelayerConfig | undefined {
+  const env = {
+    rpcUrl: process.env.RPC_URL,
+    chainId: process.env.CHAIN_ID,
+    riskRegistryAddress: process.env.RISK_REGISTRY_ADDRESS,
+    relayerPrivateKey: process.env.RELAYER_PRIVATE_KEY,
+  }
+  if (env.rpcUrl && env.chainId && env.riskRegistryAddress && env.relayerPrivateKey) {
+    return {
+      rpcUrl: env.rpcUrl,
+      chainId: Number(env.chainId),
+      riskRegistryAddress: env.riskRegistryAddress as `0x${string}`,
+      relayerPrivateKey: env.relayerPrivateKey as `0x${string}`,
+      source: "environment",
+    }
+  }
+
+  try {
+    const path = process.env.LOCAL_DEPLOYMENT_PATH ?? "../local-deployment.json"
+    const d = JSON.parse(readFileSync(path, "utf8")) as Record<string, string>
+    if (d.rpcUrl && d.chainId && d.riskRegistryAddress && d.relayerPrivateKey) {
+      return {
+        rpcUrl: d.rpcUrl,
+        chainId: Number(d.chainId),
+        riskRegistryAddress: d.riskRegistryAddress as `0x${string}`,
+        relayerPrivateKey: d.relayerPrivateKey as `0x${string}`,
+        source: path,
+      }
+    }
+  } catch {
+    // No local deployment - fall through to dry-run.
+  }
+  return undefined
+}
+
+/**
+ * The real relayer: writes each verdict to RiskRegistry and waits for the
+ * receipt (createRiskRegistryClient throws on anything but a successful mine),
+ * so "submitted" in the pipeline means the Guard can actually read it.
+ *
+ * The orchestrator hands over the *canonical* score and label — rule engine
+ * plus simulation plus any reasoning pass — so submitFinal converts exactly
+ * the decision the dashboard displays, not just the rule-engine floor.
+ */
+function createOnChainRelayer(config: RelayerConfig): RelayerSlot {
+  const chain = defineChain({
+    id: config.chainId,
+    name: `chain-${config.chainId}`,
+    nativeCurrency: { name: "Native", symbol: "NATIVE", decimals: 18 },
+    rpcUrls: { default: { http: [config.rpcUrl] } },
+  })
+
+  const relayer = new VerdictRelayer(
+    createRiskRegistryClient({
+      chain,
+      rpcUrl: config.rpcUrl,
+      contractAddress: config.riskRegistryAddress,
+      relayerPrivateKey: config.relayerPrivateKey,
+    }),
+  )
+
+  return {
+    async submit(txHash, verdict) {
+      // Errors propagate: the orchestrator records them on the tx state as
+      // `submission_failed` with the message, which the audit trail picks up.
+      await relayer.submitFinal(txHash as `0x${string}`, verdict, undefined)
+    },
+  }
+}
+
+/** Used only when no registry is configured. Logs and writes nothing. */
 function createLoggingRelayer(): RelayerSlot {
   return {
     async submit(txHash, verdict) {
@@ -250,8 +334,11 @@ async function startFromEnv(): Promise<void> {
           },
         })
 
+  const relayerConfig = resolveRelayerConfig()
+  const relayer = relayerConfig ? createOnChainRelayer(relayerConfig) : createLoggingRelayer()
+
   const orchestrator = RiskOrchestrator.create({
-    relayer: createLoggingRelayer(),
+    relayer,
     store: createMemoryStateStore(),
     audit: auditLedger
       ? (state, note) => {
@@ -281,7 +368,14 @@ async function startFromEnv(): Promise<void> {
     console.log("  GET  /tx/:txHash/status")
     console.log("  POST /tx/propose   { to, value, data }")
     console.log("  POST /policy/compile { text, usdPerNative? }")
-    console.log("  relayer: dry-run (logs verdicts, writes nothing on-chain)")
+    if (relayerConfig) {
+      console.log(`  relayer: on-chain -> RiskRegistry ${relayerConfig.riskRegistryAddress}`)
+      console.log(`           chain ${relayerConfig.chainId} via ${relayerConfig.rpcUrl} (config: ${relayerConfig.source})`)
+    } else {
+      console.log("  relayer: DRY-RUN - no registry configured, verdicts are NOT written on-chain")
+      console.log("           set RPC_URL / CHAIN_ID / RISK_REGISTRY_ADDRESS / RELAYER_PRIVATE_KEY,")
+      console.log("           or run scripts/localDeploy.ts to produce local-deployment.json")
+    }
     console.log(`  audit:   ${auditLedger ? `jsonl (${auditPath})` : "disabled (AUDIT_LOG_PATH=:memory:)"}`)
   })
 

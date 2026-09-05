@@ -14,7 +14,8 @@
     "demo:policy": "tsx scripts/policyDemo.ts",
     "demo:reconcile": "tsx scripts/reconcileDemo.ts",
     "demo:jobs": "tsx scripts/jobQueueDemo.ts",
-    "check:llm": "tsx scripts/checkLlm.ts"
+    "check:llm": "tsx scripts/checkLlm.ts",
+    "e2e:enforcement": "tsx scripts/e2eEnforcement.ts"
   },
   "dependencies": {
     "@safe-global/api-kit": "^5.0.3",
