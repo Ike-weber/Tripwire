@@ -11,45 +11,52 @@
    Deliberately single-theme. The landing page commits to dark, so the previous
    light/dark `prefers-color-scheme` pair (and its purple accent) is gone rather
    than being carried forward half-applied.
+
+   The palette itself is not defined here. It comes from ../../shared/tokens.css,
+   which the landing site reads too, so the two cannot drift. What is below is
+   only the mapping from those shared names onto the local ones the dashboard's
+   2,000 lines of CSS already speak — which is why none of that had to change.
    --------------------------------------------------------------------------- */
+@import "../../shared/tokens.css";
+
 :root {
   /* Ground and rules */
-  --bg: #030303;
-  --panel: rgba(255, 255, 255, 0.03);
-  --panel-hover: rgba(255, 255, 255, 0.06);
-  --border: rgba(255, 255, 255, 0.2);
-  --border-soft: rgba(255, 255, 255, 0.1);
+  --bg: var(--tp-bg);
+  --panel: var(--tp-surface);
+  --panel-hover: var(--tp-surface-hover);
+  --border: var(--tp-line);
+  --border-soft: var(--tp-line-soft);
 
   /* Type, graded the way the site grades it */
-  --text: rgba(255, 255, 255, 0.8);
-  --text-h: #ffffff;
-  --muted: rgba(255, 255, 255, 0.55);
-  --faint: rgba(255, 255, 255, 0.45);
+  --text: var(--tp-fg-body);
+  --text-h: var(--tp-fg);
+  --muted: var(--tp-fg-muted);
+  --faint: var(--tp-fg-faint);
 
   /* One accent, matched to the site's */
-  --accent: #58a6ff;
-  --accent-bg: rgba(88, 166, 255, 0.12);
-  --accent-border: rgba(88, 166, 255, 0.45);
+  --accent: var(--tp-accent-bright);
+  --accent-bg: var(--tp-accent-bg);
+  --accent-border: var(--tp-accent-line);
 
   /* Status. Semantic, and lifted well clear of a black ground — the previous
      values were picked against white and read as mud here. */
-  --ok: #45d19a;
-  --ok-bg: rgba(69, 209, 154, 0.12);
-  --warn: #f0a94c;
-  --warn-bg: rgba(240, 169, 76, 0.12);
-  --danger: #ff6b6b;
-  --danger-bg: rgba(255, 107, 107, 0.12);
+  --ok: var(--tp-ok);
+  --ok-bg: var(--tp-ok-bg);
+  --warn: var(--tp-warn);
+  --warn-bg: var(--tp-warn-bg);
+  --danger: var(--tp-danger);
+  --danger-bg: var(--tp-danger-bg);
 
   /* Provenance of a number: read off the chain, or shipped as a fixture. */
-  --live: #4fbdb0;
-  --sample: #e0813f;
+  --live: var(--tp-live);
+  --sample: var(--tp-sample);
 
   --code-bg: rgba(255, 255, 255, 0.05);
   --shadow: none;
 
   --sans: system-ui, "Segoe UI", Roboto, sans-serif;
   --heading: system-ui, "Segoe UI", Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+  --mono: var(--tp-mono);
 
   /* 15px, not the site's 16: this is a dense read, not prose. */
   font: 15px/1.5 var(--sans);

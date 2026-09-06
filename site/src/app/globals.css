@@ -1,4 +1,7 @@
 @import "tailwindcss";
+
+/* The product palette, shared with the dashboard. See shared/tokens.css. */
+@import "../../../shared/tokens.css";
 @import "tw-animate-css";
 
 /* shadcn/ui tokens, tuned to this site rather than the default neutral scale:
@@ -27,7 +30,7 @@
   --destructive-foreground: #ffffff;
   --border: #333333;
   --input: #333333;
-  --ring: #2f6fd0;
+  --ring: var(--tp-accent);
 }
 
 @theme inline {
@@ -58,12 +61,12 @@
 }
 
 @theme {
-  --color-theme-dark: #030303;
+  --color-theme-dark: var(--tp-bg);
   --color-theme-dark-50: #e6e6e6;
   --color-theme-dark-500: #060606;
 
   --font-sans: var(--font-inter), "Inter", sans-serif;
-  --font-mono: ui-monospace, "Menlo", "SFMono-Regular", monospace;
+  --font-mono: var(--tp-mono);
 
   --animate-scroll-left: scroll-left 40s linear infinite;
   --animate-scroll-right: scroll-right 40s linear infinite;
@@ -133,9 +136,9 @@ body {
    same, and sit in the same family as the CTA canvas accent.
    --------------------------------------------------------------------------- */
 :root {
-  --bloom-core: 236 230 255;
-  --bloom-mid: 126 92 214;
-  --bloom-edge: 42 107 224;
+  --bloom-core: var(--tp-bloom-core);
+  --bloom-mid: var(--tp-bloom-mid);
+  --bloom-edge: var(--tp-bloom-edge);
 }
 
 .bloom {

@@ -1,16 +1,22 @@
+import {
+  MARK_NODE,
+  MARK_STROKES,
+  MARK_VIEWBOX,
+} from "../../../shared/tripwireMark.js"
+
 import { activeChain } from "../config.js"
 import { NAV_GROUPS } from "../nav.js"
 
 /**
- * The Tripwire mark, as drawn on the landing page: two posts, a taut wire, and
- * the trigger node at its centre.
+ * The Tripwire mark. The geometry is shared with the landing site — see
+ * shared/tripwireMark.ts — so the two cannot drift apart.
  */
 function Mark() {
   return (
     <svg
       width="18"
       height="18"
-      viewBox="0 0 24 24"
+      viewBox={MARK_VIEWBOX}
       fill="none"
       stroke="currentColor"
       strokeWidth="1.5"
@@ -18,10 +24,10 @@ function Mark() {
       aria-hidden="true"
       className="sidebar-mark"
     >
-      <path d="M3 5.5V18.5" />
-      <path d="M21 5.5V18.5" />
-      <path d="M3 12H21" />
-      <circle cx="12" cy="12" r="2.75" fill="currentColor" stroke="none" />
+      {MARK_STROKES.map((d) => (
+        <path key={d} d={d} />
+      ))}
+      <circle {...MARK_NODE} fill="currentColor" stroke="none" />
     </svg>
   )
 }

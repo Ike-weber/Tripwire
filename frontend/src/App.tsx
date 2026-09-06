@@ -22,6 +22,7 @@ import { SimulationCard } from "./components/SimulationCard.js"
 import { SimulationIntegrityCard } from "./components/SimulationIntegrityCard.js"
 import { VerificationStatusCard } from "./components/VerificationStatusCard.js"
 import { PAGES } from "./nav.js"
+import { idFromLocation, pathForId } from "./route.js"
 
 /** The cards each page owns. Kept beside the router so the two cannot drift. */
 const PAGE_CARDS: Record<string, ReactNode> = {
@@ -93,8 +94,15 @@ function StackSection({ id }: { id: string }) {
   )
 }
 
+const PAGE_IDS = PAGES.map((p) => p.id)
+const DEFAULT_PAGE = "overview"
+
 export function App() {
-  const [activeId, setActiveId] = useState("overview")
+  // Read from the URL, so /app/monitoring survives a refresh and each section
+  // is linkable.
+  const [activeId, setActiveId] = useState(() =>
+    idFromLocation(DEFAULT_PAGE, PAGE_IDS),
+  )
   // Open on a desktop, closed on a phone: below 900px the sidebar overlays the
   // content rather than sitting beside it, so defaulting it open would hide the
   // dashboard behind the nav on first load.
@@ -116,8 +124,16 @@ export function App() {
     return () => window.removeEventListener("keydown", onKey)
   }, [])
 
+  // Back and forward move between sections rather than leaving the dashboard.
+  useEffect(() => {
+    const onPop = () => setActiveId(idFromLocation(DEFAULT_PAGE, PAGE_IDS))
+    window.addEventListener("popstate", onPop)
+    return () => window.removeEventListener("popstate", onPop)
+  }, [])
+
   const select = useCallback((id: string) => {
     setActiveId(id)
+    window.history.pushState({ id }, "", pathForId(id, DEFAULT_PAGE))
     // A section change is a page change; land at the top of it.
     window.scrollTo({ top: 0, behavior: "instant" })
   }, [])

@@ -1,12 +1,13 @@
+import {
+  MARK_NODE,
+  MARK_STROKES,
+  MARK_VIEWBOX,
+} from "../../../shared/tripwireMark";
+
 /**
- * The Tripwire mark: a wire strung taut between two posts, with the trigger
- * node at its centre — the thing that trips.
- *
- * Drawn from the product's own idea rather than adapted from any existing
- * logo. Geometry only: two verticals, one horizontal, one node. Uses
- * `currentColor` so it takes the colour of whatever it sits in, and stays
- * legible down to favicon size because nothing in it is smaller than the
- * stroke width.
+ * The Tripwire mark. The geometry is shared with the dashboard — see
+ * shared/tripwireMark.ts — and rendered here so it keeps `currentColor` and
+ * takes the colour of whatever it sits in.
  */
 export default function TripwireMark({
   className,
@@ -14,7 +15,7 @@ export default function TripwireMark({
 }: React.ComponentProps<"svg">) {
   return (
     <svg
-      viewBox="0 0 24 24"
+      viewBox={MARK_VIEWBOX}
       fill="none"
       stroke="currentColor"
       strokeWidth="1.5"
@@ -23,13 +24,10 @@ export default function TripwireMark({
       className={className}
       {...props}
     >
-      {/* posts */}
-      <path d="M3 5.5V18.5" />
-      <path d="M21 5.5V18.5" />
-      {/* the wire */}
-      <path d="M3 12H21" />
-      {/* trigger node */}
-      <circle cx="12" cy="12" r="2.75" fill="currentColor" stroke="none" />
+      {MARK_STROKES.map((d) => (
+        <path key={d} d={d} />
+      ))}
+      <circle {...MARK_NODE} fill="currentColor" stroke="none" />
     </svg>
   );
 }

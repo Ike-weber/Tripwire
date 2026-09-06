@@ -32,6 +32,9 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# Not a secret: it only names the local Vite port, and every developer needs
+# the same value for `/app` to work in `next dev`.
+!.env.development
 
 # vercel
 .vercel
@@ -39,3 +42,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# The dashboard build, produced by `npm run build:web` at the repo root
+# (frontend/ -> here). Generated, never edited, so it is not committed.
+/public/app/
