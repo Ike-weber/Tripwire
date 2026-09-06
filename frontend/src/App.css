@@ -10,15 +10,116 @@
   gap: 10px;
 }
 
-.connect-wallet button {
-  font-family: var(--sans);
-  font-size: 14px;
-  padding: 8px 14px;
+/* ---------------------------------------------------------------------------
+   CTA — the landing page's two buttons, restated in CSS.
+
+   The site builds these with Tailwind + motion (site/src/components/ButtonLink
+   and TextRoll); the dashboard has neither, so the shape is written out here
+   rather than pulled in. The values are the site's, not approximations of it:
+   40px tall, square, mono at 14/500 with -0.2px tracking, and a label that
+   rolls out the top on hover over 300ms.
+
+     .cta-primary  — "View Dashboard": solid white on near-black type.
+     .cta-ghost    — "View Docs": 5% white fill behind a 40% white hairline.
+   --------------------------------------------------------------------------- */
+.cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  padding: 0 16px;
+  border: 1px solid transparent;
   border-radius: 0;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text-h);
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+  overflow: hidden;
   cursor: pointer;
+  transition:
+    background-color 300ms ease,
+    border-color 300ms ease,
+    color 300ms ease;
+}
+
+.cta:disabled {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.cta-primary {
+  background: var(--text-h);
+  color: var(--text-on-solid);
+}
+
+.cta-primary:hover {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.cta-ghost {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.4);
+  color: var(--text-h);
+}
+
+.cta-ghost:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Worn by something that is a label, not an action - the connected address. */
+.cta-static {
+  cursor: default;
+}
+
+/* The rolling label. Two copies stacked: the visible one leaves through the
+   top while the duplicate rises into its place. */
+.cta-roll {
+  display: block;
+  position: relative;
+  overflow: hidden;
+  /* Roomier than the button's own line-height, which is tight for centring: the
+     clip that makes the roll work would otherwise shave descenders. */
+  line-height: 1.3;
+}
+
+.cta-roll-out,
+.cta-roll-in {
+  display: block;
+  transition: transform 300ms ease-in-out;
+}
+
+.cta-roll-in {
+  position: absolute;
+  inset: 0;
+  transform: translateY(100%);
+}
+
+.cta:hover .cta-roll-out {
+  transform: translateY(-100%);
+}
+
+.cta:hover .cta-roll-in {
+  transform: translateY(0);
+}
+
+/* A label that leaves and re-enters is motion for its own sake to anyone who
+   has asked for less of it; the colour change alone still reads as hover. */
+@media (prefers-reduced-motion: reduce) {
+  .cta-roll-out,
+  .cta-roll-in {
+    transition: none;
+  }
+
+  .cta:hover .cta-roll-out,
+  .cta:hover .cta-roll-in {
+    transform: none;
+  }
+
+  .cta-roll-in {
+    display: none;
+  }
 }
 
 
@@ -70,12 +171,6 @@
   font-weight: 600;
   padding: 2px 9px;
   border-radius: 0;
-}
-
-.pill-connected {
-  background: var(--accent-bg);
-  color: var(--text-h);
-  border: 1px solid var(--accent-border);
 }
 
 .pill-active {

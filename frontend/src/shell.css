@@ -49,6 +49,23 @@
   flex-shrink: 0;
 }
 
+/* The wordmark links back to the landing site. It is a link, so it says so on
+   hover and takes focus — but it is also the brand, so it does not wear link
+   colour or an underline at rest. */
+.sidebar-home {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  text-decoration: none;
+  color: inherit;
+  transition: opacity 160ms ease;
+}
+
+.sidebar-home:hover {
+  opacity: 0.7;
+}
+
 .sidebar-mark {
   color: var(--text-h);
   flex-shrink: 0;
@@ -281,6 +298,18 @@
   min-width: 0;
 }
 
+/* The root crumb goes home, the way the root crumb of a breadcrumb always
+   does. Muted at rest with the rest of the trail; white on hover. */
+.crumb-home {
+  color: inherit;
+  text-decoration: none;
+  transition: color 160ms ease;
+}
+
+.crumb-home:hover {
+  color: var(--text-h);
+}
+
 .crumb-current {
   color: var(--text-h);
   white-space: nowrap;
@@ -481,22 +510,14 @@
 
 /* ------------------------------------------------------- wallet + cards */
 
-/* The connect control sits in a 57px bar; it must not wrap to two lines. */
-.topbar .connect-wallet button {
-  white-space: nowrap;
+/* The connect control wears the site's CTAs (.cta-primary / .cta-ghost, in
+   App.css) so the first thing on the dashboard is the same button the landing
+   page just asked you to press. Those are sized for a hero; this is a 57px bar,
+   so they come down a notch here - and nothing may wrap to a second line. */
+.topbar .cta {
+  height: 34px;
+  padding: 0 13px;
   font-size: 13px;
-  padding: 7px 12px;
-  border: 1px solid var(--border-soft);
-  background: transparent;
-  color: var(--text);
-  transition:
-    border-color 160ms ease,
-    color 160ms ease;
-}
-
-.topbar .connect-wallet button:hover {
-  border-color: var(--border);
-  color: var(--text-h);
 }
 
 /* Cards, restated in the site's language: square, hairline, faintly filled,

@@ -5,6 +5,7 @@ import {
 } from "../../../shared/tripwireMark.js"
 
 import { activeChain } from "../config.js"
+import { SITE_URL } from "../links.js"
 import { NAV_GROUPS } from "../nav.js"
 
 /**
@@ -56,8 +57,13 @@ export function Sidebar({
       inert={collapsed || undefined}
     >
       <div className="sidebar-brand">
-        <Mark />
-        <span className="sidebar-brand-name">Tripwire</span>
+        {/* The wordmark is the way back to the site, the way a product's logo
+            always is. The chain badge stays outside the link — it labels the
+            deployment, it is not part of the brand. */}
+        <a className="sidebar-home" href={SITE_URL}>
+          <Mark />
+          <span className="sidebar-brand-name">Tripwire</span>
+        </a>
         <span className="sidebar-chain">{activeChain.name}</span>
       </div>
 

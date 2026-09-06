@@ -21,6 +21,7 @@ import { SimulateAttackCard } from "./components/SimulateAttackCard.js"
 import { SimulationCard } from "./components/SimulationCard.js"
 import { SimulationIntegrityCard } from "./components/SimulationIntegrityCard.js"
 import { VerificationStatusCard } from "./components/VerificationStatusCard.js"
+import { SITE_URL } from "./links.js"
 import { PAGES } from "./nav.js"
 import { idFromLocation, pathForId } from "./route.js"
 
@@ -171,7 +172,9 @@ export function App() {
           </button>
 
           <nav className="crumbs" aria-label="Breadcrumb">
-            <span>Tripwire</span>
+            <a className="crumb-home" href={SITE_URL}>
+              Tripwire
+            </a>
             <span aria-hidden="true">/</span>
             <span className="crumb-current">
               {PAGES.find((p) => p.id === activeId)?.title}

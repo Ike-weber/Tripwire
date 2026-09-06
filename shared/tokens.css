@@ -39,6 +39,10 @@
   --tp-fg-muted: rgba(255, 255, 255, 0.55);
   --tp-fg-faint: rgba(255, 255, 255, 0.45);
 
+  /* Type set *on* a white fill - the primary CTA in both apps, and the only
+     place in the product where type is not white. */
+  --tp-fg-on-primary: #060606;
+
   /* --- Accent ------------------------------------------------------------- */
   /* Two stops of one blue, and they are not interchangeable. The deep stop is
      the only one that holds ~4.9:1 under white copy, so it is what the CTA

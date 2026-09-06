@@ -19,7 +19,7 @@
   --popover: #060606;
   --popover-foreground: #ffffff;
   --primary: #ffffff;
-  --primary-foreground: #060606;
+  --primary-foreground: var(--tp-fg-on-primary);
   --secondary: #1a1a1a;
   --secondary-foreground: #ffffff;
   --muted: #141414;

@@ -32,6 +32,7 @@
   --text-h: var(--tp-fg);
   --muted: var(--tp-fg-muted);
   --faint: var(--tp-fg-faint);
+  --text-on-solid: var(--tp-fg-on-primary);
 
   /* One accent, matched to the site's */
   --accent: var(--tp-accent-bright);
