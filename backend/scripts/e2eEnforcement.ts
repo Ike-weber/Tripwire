@@ -81,13 +81,20 @@ const readVerdict = (txHash: `0x${string}`) =>
   pub.readContract({ address: registry, abi: REGISTRY_ABI, functionName: "verdictOf", args: [txHash] })
 
 /** Raw JSON-RPC, for the hardhat-only impersonation helpers. */
-async function rpc(method: string, params: unknown[]): Promise<unknown> {
+async function rpcRaw(
+  method: string,
+  params: unknown[],
+): Promise<{ result?: unknown; error?: { message: string; data?: unknown } }> {
   const res = await fetch(deployment.rpcUrl, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
   })
-  const body = (await res.json()) as { result?: unknown; error?: { message: string } }
+  return (await res.json()) as { result?: unknown; error?: { message: string; data?: unknown } }
+}
+
+async function rpc(method: string, params: unknown[]): Promise<unknown> {
+  const body = await rpcRaw(method, params)
   if (body.error) throw new Error(`${method}: ${body.error.message}`)
   return body.result
 }
@@ -127,11 +134,24 @@ async function askGuard(
     functionName: "checkTransaction",
     args: [to, value, data, 0, 0n, 0n, 0n, `0x${"0".repeat(40)}`, `0x${"0".repeat(40)}`, "0x", safe],
   })
-  const result = (await rpc("eth_call", [{ from: safe, to: guard, data: calldata }, "latest"])) as string
+  const body = await rpcRaw("eth_call", [{ from: safe, to: guard, data: calldata }, "latest"])
 
   // checkTransaction returns nothing, so any returned data is revert data.
-  if (!result || result === "0x") return { allowed: true }
-  const selector = result.slice(0, 10)
+  // Depending on the node's throwOnCallFailures setting, that revert data
+  // arrives either as a successful result (LOCAL_E2E=true) or inside the
+  // JSON-RPC error payload. Only data-shaped payloads count as decisions;
+  // anything else is a real RPC failure and must propagate.
+  let revertData: string | undefined
+  if (typeof body.result === "string" && body.result !== "0x") {
+    revertData = body.result
+  } else if (body.error) {
+    const data = body.error.data
+    const hex = typeof data === "string" ? data : (data as { data?: string } | undefined)?.data
+    if (typeof hex === "string" && hex.startsWith("0x") && hex.length >= 10) revertData = hex
+    else throw new Error(`eth_call: ${body.error.message}`)
+  }
+  if (!revertData) return { allowed: true }
+  const selector = revertData.slice(0, 10)
   return { allowed: false, error: GUARD_ERRORS[selector] ?? `unknown revert ${selector}` }
 }
 
